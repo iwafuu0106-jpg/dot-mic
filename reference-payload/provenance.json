@@ -1,0 +1,106 @@
+﻿{
+    "Time":  "2026-10-07T16:21:05.3999848+09:00",
+    "Reference":  "0.3.4-local",
+    "CodeChanged":  false,
+    "SignatureOnlyDerivation":  true,
+    "Files":  [
+                  {
+                      "Name":  "concrt140.dll",
+                      "Hash":  "6926DDADE5B6E67F1F8B2923D3CEA8C2C49A0242144C02E05CC5DD0B42468B7D",
+                      "ReferenceHash":  "6926DDADE5B6E67F1F8B2923D3CEA8C2C49A0242144C02E05CC5DD0B42468B7D",
+                      "SignatureRemoved":  false,
+                      "ImageHash":  null
+                  },
+                  {
+                      "Name":  "DotMic.ApoGate.dll",
+                      "Hash":  "CF045C9EE30834316E4327DBE1F1DB38B0A9208CD5DCC00A5DCB1A0B64E8817B",
+                      "ReferenceHash":  "9F82245EA0E5061AD30317251F6EF796B82D5C10D876BB3B66FF1AF4C282B20B",
+                      "SignatureRemoved":  true,
+                      "ImageHash":  "AE727801AF17FA818E32A6D231601D4BB002300F3A774E19B056DEDD44E7F9A5"
+                  },
+                  {
+                      "Name":  "DotMic.Inference.dll",
+                      "Hash":  "D5AE2AD9162742F433C87F7D31F0141B721A244AFCA9EEEAD297B937209A6548",
+                      "ReferenceHash":  "F3F9952DC192243CBB067C5CB9C42A247983ED073AA082BA93CD82DB804F672E",
+                      "SignatureRemoved":  true,
+                      "ImageHash":  "3511A23EA3F9A331C072D1F5B0BE06A5E8C59DD0C6D9BE1FE4F83F1EB0853950"
+                  },
+                  {
+                      "Name":  "dpdfnet2_48khz_hr.onnx",
+                      "Hash":  "7F0575A5CEC0BA4FFD8F8BD657E06D007E4CCDD955D76FAAB922B9D3291DC14B",
+                      "ReferenceHash":  "7F0575A5CEC0BA4FFD8F8BD657E06D007E4CCDD955D76FAAB922B9D3291DC14B",
+                      "SignatureRemoved":  false,
+                      "ImageHash":  null
+                  },
+                  {
+                      "Name":  "msvcp140.dll",
+                      "Hash":  "6FDC2C6FC1362C317ED65AE331DDA329D4D03826FEB8D79D635EAF8BA49764BC",
+                      "ReferenceHash":  "6FDC2C6FC1362C317ED65AE331DDA329D4D03826FEB8D79D635EAF8BA49764BC",
+                      "SignatureRemoved":  false,
+                      "ImageHash":  null
+                  },
+                  {
+                      "Name":  "msvcp140_1.dll",
+                      "Hash":  "6284349A2262B2329AA75AA8559980F9B2775DC5EC3A9E9ECDF55648AC7F625A",
+                      "ReferenceHash":  "6284349A2262B2329AA75AA8559980F9B2775DC5EC3A9E9ECDF55648AC7F625A",
+                      "SignatureRemoved":  false,
+                      "ImageHash":  null
+                  },
+                  {
+                      "Name":  "msvcp140_2.dll",
+                      "Hash":  "340E8E397BA46769D61384329EC611B7D96E1EFB8DE2F2D04941E3802A7DB784",
+                      "ReferenceHash":  "340E8E397BA46769D61384329EC611B7D96E1EFB8DE2F2D04941E3802A7DB784",
+                      "SignatureRemoved":  false,
+                      "ImageHash":  null
+                  },
+                  {
+                      "Name":  "msvcp140_atomic_wait.dll",
+                      "Hash":  "CFB61860C4949DEE0D295B0156DA77278DC676CC4DD820F71FD663C6390DB070",
+                      "ReferenceHash":  "CFB61860C4949DEE0D295B0156DA77278DC676CC4DD820F71FD663C6390DB070",
+                      "SignatureRemoved":  false,
+                      "ImageHash":  null
+                  },
+                  {
+                      "Name":  "msvcp140_codecvt_ids.dll",
+                      "Hash":  "AA7F11D6B613705C561C6E2EC9CDBE61C339BB2380268DA337593C37E1F39D89",
+                      "ReferenceHash":  "AA7F11D6B613705C561C6E2EC9CDBE61C339BB2380268DA337593C37E1F39D89",
+                      "SignatureRemoved":  false,
+                      "ImageHash":  null
+                  },
+                  {
+                      "Name":  "onnxruntime.dll",
+                      "Hash":  "DEC964AB1EE36CC9B0AE247D13B376627992FC57DEC0454354017AB8FD84F1EA",
+                      "ReferenceHash":  "DEC964AB1EE36CC9B0AE247D13B376627992FC57DEC0454354017AB8FD84F1EA",
+                      "SignatureRemoved":  false,
+                      "ImageHash":  null
+                  },
+                  {
+                      "Name":  "onnxruntime_providers_shared.dll",
+                      "Hash":  "A2B3A50956AA75A9879C8472BC7DF4F7A8072BCD2DB19A1B7D988E7688F293EF",
+                      "ReferenceHash":  "A2B3A50956AA75A9879C8472BC7DF4F7A8072BCD2DB19A1B7D988E7688F293EF",
+                      "SignatureRemoved":  false,
+                      "ImageHash":  null
+                  },
+                  {
+                      "Name":  "vccorlib140.dll",
+                      "Hash":  "30951EEA089A38B405DD0E41A6AD47564911CA9418549F9A609129D6B4B0A497",
+                      "ReferenceHash":  "30951EEA089A38B405DD0E41A6AD47564911CA9418549F9A609129D6B4B0A497",
+                      "SignatureRemoved":  false,
+                      "ImageHash":  null
+                  },
+                  {
+                      "Name":  "vcruntime140.dll",
+                      "Hash":  "D5A99B38807C3DF803876CE5F1E71DC43CD7AC2C882582387E550941BC99CD00",
+                      "ReferenceHash":  "D5A99B38807C3DF803876CE5F1E71DC43CD7AC2C882582387E550941BC99CD00",
+                      "SignatureRemoved":  false,
+                      "ImageHash":  null
+                  },
+                  {
+                      "Name":  "vcruntime140_1.dll",
+                      "Hash":  "68F948EA61695F85FF24D249077E312ABB23267B3ADC43679D35D781E9AA0244",
+                      "ReferenceHash":  "68F948EA61695F85FF24D249077E312ABB23267B3ADC43679D35D781E9AA0244",
+                      "SignatureRemoved":  false,
+                      "ImageHash":  null
+                  }
+              ]
+}

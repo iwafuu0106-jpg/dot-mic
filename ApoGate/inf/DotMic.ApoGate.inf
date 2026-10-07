@@ -1,0 +1,63 @@
+[Version]
+Signature="$WINDOWS NT$"
+Class=AudioProcessingObject
+ClassGuid={5989fce8-9cd0-467d-8a6a-5419e31529d4}
+Provider=%Provider%
+DriverVer=10/07/2026,0.1.1.0
+CatalogFile=DotMic.ApoGate.cat
+PnpLockDown=1
+
+[Manufacturer]
+%Provider%=Components,NTamd64.10.0...22621
+
+[Components.NTamd64.10.0...22621]
+%ComponentDesc%=Gate_Install,SWC\VEN_DOTM&CID_GATE_8F611FC3
+
+[Gate_Install]
+CopyFiles=Gate_Files
+AddReg=Gate_Registration
+
+[Gate_Install.Services]
+AddService=,2
+
+[Gate_Files]
+DotMic.ApoGate.dll
+
+[Gate_Registration]
+; Component-scoped COM/APO registration, DriverStore path, no regsvr32/HKCR writes.
+HKR,Classes\CLSID\%GateClsid%,,,%ApoDesc%
+HKR,Classes\CLSID\%GateClsid%\InProcServer32,,0x00020000,%13%\DotMic.ApoGate.dll
+HKR,Classes\CLSID\%GateClsid%\InProcServer32,ThreadingModel,,"Both"
+HKR,AudioEngine\AudioProcessingObjects\%GateClsid%,FriendlyName,,%ApoDesc%
+HKR,AudioEngine\AudioProcessingObjects\%GateClsid%,Copyright,,"DOT MIC (MIT)"
+HKR,AudioEngine\AudioProcessingObjects\%GateClsid%,MajorVersion,0x00010001,1
+HKR,AudioEngine\AudioProcessingObjects\%GateClsid%,MinorVersion,0x00010001,0
+HKR,AudioEngine\AudioProcessingObjects\%GateClsid%,Flags,0x00010001,0x0000000e
+HKR,AudioEngine\AudioProcessingObjects\%GateClsid%,MinInputConnections,0x00010001,1
+HKR,AudioEngine\AudioProcessingObjects\%GateClsid%,MaxInputConnections,0x00010001,1
+HKR,AudioEngine\AudioProcessingObjects\%GateClsid%,MinOutputConnections,0x00010001,1
+HKR,AudioEngine\AudioProcessingObjects\%GateClsid%,MaxOutputConnections,0x00010001,1
+HKR,AudioEngine\AudioProcessingObjects\%GateClsid%,MaxInstances,0x00010001,0xffffffff
+HKR,AudioEngine\AudioProcessingObjects\%GateClsid%,NumAPOInterfaces,0x00010001,1
+HKR,AudioEngine\AudioProcessingObjects\%GateClsid%,APOInterface0,,"{FD7F2B29-24D0-4B5C-B177-592C39F9CA10}"
+
+[SourceDisksNames]
+1="DOT MIC no-op gate"
+
+[SourceDisksFiles]
+DotMic.ApoGate.dll=1
+
+[DestinationDirs]
+Gate_Files=13
+
+[SignatureAttributes]
+DotMic.ApoGate.dll=SignatureAttributes.PETrust
+
+[SignatureAttributes.PETrust]
+PETrust=true
+
+[Strings]
+Provider="DOT MIC"
+ComponentDesc="DOT MIC no-op capture MFX gate component"
+ApoDesc="DOT MIC no-op Capture MFX gate"
+GateClsid="{8F611FC3-1A33-477D-9820-F8B9A11D1030}"

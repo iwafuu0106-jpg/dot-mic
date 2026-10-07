@@ -1,0 +1,11 @@
+{
+  "repository": "microsoft/win32metadata",
+  "commit": "9a72549a5157598433589c5572a011869f335a1c",
+  "basePath": "generation/WinSDK/RecompiledIdlHeaders/um",
+  "headers": {
+    "AudioAPOTypes.h": "a93f40f7e672974fd868598c3ab6c19b88bba7a08dd14b3f3af8ae13046865e3",
+    "audioenginebaseapo.h": "1859398a91a4498f23ad1e06755f9520138308268f4ac4927a3526c3de1d6382",
+    "audioengineextensionapo.h": "21c5ef33c25db7feee29b52a17c3aa264fd1a64034cf8269df9619c9c7122d57",
+    "mmdeviceapi.h": "dcacabdf69f267a7892ab61f22f3293fc3173c2d962306ce89a0145def7b7b1a"
+  }
+}

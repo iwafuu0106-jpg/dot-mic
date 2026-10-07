@@ -1,0 +1,8 @@
+.deps/
+artifacts/
+App/bin/
+App/obj/
+*.user
+**/bin/
+**/obj/
+models/*.onnx

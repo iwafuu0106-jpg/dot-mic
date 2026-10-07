@@ -1,0 +1,252 @@
+{
+  "designVersion": "3.2-minimal",
+  "meaning": "implementation defaults; not measured performance; not a complete runtime model profile",
+  "audio": {
+    "sampleRateHz": 48000,
+    "channels": 1,
+    "sampleType": "float32-normalized",
+    "hopSamples": 480,
+    "inputTrimDb": 0,
+    "inputTrimRequiresDedicatedStage": false,
+    "gain": {
+      "initialDb": 0.0,
+      "minDb": -12.0,
+      "maxDb": 36.0,
+      "quantumDb": 0.1,
+      "smoothingMs": 20,
+      "ramp": "linear-amplitude-current-to-latest"
+    },
+    "gate": {
+      "enabled": false,
+      "openThresholdDbfs": -48.0,
+      "hysteresisDb": 6.0,
+      "closeThresholdExpression": "openThresholdDbfs - hysteresisDb",
+      "attackMs": 5,
+      "holdMs": 160,
+      "releaseMs": 120,
+      "detectorPowerEmaMs": 5,
+      "detectorPosition": "after-aligned-nc-selector-before-user-gain",
+      "ncTransitionPolicy": "preserve-envelope-and-gain-use-normal-hold-no-extra-mode-by-default",
+      "ranges": {
+        "openThresholdDbfs": [
+          -80,
+          -10
+        ],
+        "hysteresisDb": [
+          2,
+          12
+        ],
+        "attackMs": [
+          1,
+          30
+        ],
+        "holdMs": [
+          50,
+          500
+        ],
+        "releaseMs": [
+          30,
+          500
+        ]
+      }
+    },
+    "limiter": {
+      "enabled": true,
+      "ceilingDbfs": -1.0,
+      "lookaheadMs": 3,
+      "releaseMs": 60,
+      "position": "after-output-resampling-before-channel-mapping-and-encoding",
+      "type": "smooth-lookahead-sample-peak-not-true-peak",
+      "safetyClampCounter": true,
+      "indicatorReductionThresholdDb": 1.0
+    },
+    "ringCapacityHops": {
+      "dry": 32,
+      "jobs": 4,
+      "wet": 16
+    },
+    "renderClockMaster": true,
+    "schedulingReserveMs": 20,
+    "sourceAlignment": "verify selected model once; keep dry and wet aligned; no live delay jumps",
+    "knownInputRatesHz": [
+      44100,
+      48000
+    ],
+    "knownChannelCounts": [
+      1,
+      2
+    ],
+    "inputChannelDefault": 1,
+    "outputStereo": "duplicate-mono-to-both-channels",
+    "preferWasapiSharedFloatClient": true,
+    "preserveExistingWorkingFormatAdapter": true
+  },
+  "nc": {
+    "modelId": "dpdfnet2_48khz_hr",
+    "precision": "FP32",
+    "enabledByDefault": false,
+    "uiControls": [
+      "enabled"
+    ],
+    "fftSamples": 960,
+    "frequencyBins": 481,
+    "specShape": [
+      1,
+      1,
+      481,
+      2
+    ],
+    "window": "Vorbis-matching-official-streaming-reference",
+    "stateInitialization": "model-metadata-norm-initial-values-plus-required-zero-regions",
+    "fftBackend": "KissFFT-float32-OpenMP-OFF",
+    "executionProvider": "CPUExecutionProvider",
+    "intraOpThreads": 1,
+    "interOpThreads": 1,
+    "executionMode": "ORT_SEQUENTIAL",
+    "intraOpSpinning": false,
+    "interOpSpinning": false,
+    "graphOptimizationInitial": "ORT_ENABLE_ALL",
+    "concurrentRuns": false,
+    "normalCrossfadeMs": 20,
+    "faultDeclickMaxMs": 1,
+    "delayMatchedBypass": true,
+    "offMeansInferenceAndFrontendStoppedAfterAck": true,
+    "retainSessionMemoryWhenOff": true,
+    "automaticModelSwitch": false,
+    "automaticRetry": false
+  },
+  "clock": {
+    "backend": "libsamplerate",
+    "converter": "SRC_SINC_FASTEST",
+    "keepExistingStableController": true,
+    "newImplementationStartingController": "bounded-proportional",
+    "kpPpmPerInputSample": 2.0,
+    "waterErrorEmaMs": 1000,
+    "controlIntervalMs": 100,
+    "maxCorrectionPpm": 1000,
+    "maxSlewPpmPerSecond": 50,
+    "nominalRatioConvention": "output-frames / input-frames",
+    "ordinaryDropDuplicate": false
+  },
+  "ui": {
+    "appName": "DOT MIC",
+    "units": "DIP",
+    "main": {
+      "width": 360,
+      "height": 416,
+      "minimumWidth": 320,
+      "minimumWindowHeight": 432,
+      "titleBarHeight": 40,
+      "horizontalMargin": 16,
+      "sectionGap": 8,
+      "layout": "vertical-grid-with-scroll",
+      "processingColumns": 1,
+      "dialDiameter": 176
+    },
+    "flyout": {
+      "width": 320,
+      "height": 416,
+      "titleBarHeight": 40,
+      "horizontalMargin": 16,
+      "sectionGap": 8,
+      "processingColumns": 1,
+      "dialDiameter": 144
+    },
+    "minimumHitTarget": 32,
+    "standardMainHitTarget": 32,
+    "menuWidth": 284,
+    "colors": {
+      "background": "#0D1321",
+      "surface": "#111A2B",
+      "raised": "#192338",
+      "textPrimary": "#E8ECF4",
+      "textSecondary": "#929BAE",
+      "decorativeDot": "#293247",
+      "accent": "#E8ECF4",
+      "warningAccent": "#E97982"
+    },
+    "gainInteraction": {
+      "minDb": -12.0,
+      "maxDb": 36.0,
+      "initialDb": 0.0,
+      "quantumDb": 0.1,
+      "angleMinDeg": -135.0,
+      "angleMaxDeg": 135.0,
+      "dragMode": "relative-rotary-unwrapped",
+      "dragDetentDb": 0.5,
+      "fineDragDetentDb": 0.1,
+      "fineDragSensitivity": 0.2,
+      "centreDeadZoneDip": 12,
+      "wheelDbPerNotch": 1.0,
+      "fineWheelDbPerNotch": 0.1,
+      "arrowDb": 0.5,
+      "fineArrowDb": 0.1,
+      "resetDb": 0.0
+    },
+    "allowWindowGrowthForTextScaling": true,
+    "trayResidentByDefault": true,
+    "startAtSignInByDefault": false,
+    "gateEnabledByDefault": false,
+    "renderingGpuAllowed": true,
+    "bodyFont": "system Japanese UI font",
+    "numberGlyph": "own 5x7 fixed width dots; no redistributed font files"
+  },
+  "motion": {
+    "defaultMode": "Full",
+    "durationMs": {
+      "press": 70,
+      "detent": 80,
+      "fast": 167,
+      "normal": 200,
+      "sectionFade": 160,
+      "stagger": 12,
+      "reducedMax": 100,
+      "limiterIndicatorHold": 300
+    },
+    "easing": {
+      "enter": [
+        0.16,
+        1.0,
+        0.3,
+        1.0
+      ],
+      "exit": [
+        0.4,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "standard": [
+        0.2,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "press": [
+        0.4,
+        0.0,
+        0.2,
+        1.0
+      ]
+    },
+    "visualTransforms": {
+      "pressScale": 1,
+      "knobPlatePressScale": 1,
+      "windowEnterScale": 1,
+      "windowEnterDip": 0,
+      "popupEnterDip": 4
+    },
+    "ambient": {
+      "enabled": false,
+      "fixedPhaseOffsets": true,
+      "animateSemanticStatus": false
+    },
+    "meterPollHzVisible": 30,
+    "stopDrawAndMeterWhenHidden": true,
+    "hiddenStatusPollHzMax": 1,
+    "preferExistingEventNotifications": true,
+    "retargetFromCurrent": true,
+    "osAnimationsDisabledOverride": "Reduced",
+    "keepSemanticLabelsAndHitRectsStill": true
+  }
+}

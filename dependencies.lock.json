@@ -1,0 +1,10 @@
+{
+  "format": 1,
+  "onnxruntime": { "version": "1.23.2", "provider": "CPU", "sha256": "0b38df9af21834e41e73d602d90db5cb06dbd1ca618948b8f1d66d607ac9f3cd", "url": "https://github.com/microsoft/onnxruntime/releases/download/v1.23.2/onnxruntime-win-x64-1.23.2.zip" },
+  "kissfft": { "version": "131.1.0", "precision": "float32", "openmp": false, "sha256": "9c2e19cc34ed910dcb509fd8ab561a523b923b6578703ace8c8f37f5a286bb25", "url": "https://github.com/mborgerding/kissfft/archive/refs/tags/131.1.0.zip" },
+  "libsamplerate": { "version": "0.2.2", "converter": "SRC_SINC_FASTEST", "sha256": "7bd06fabd57027e9c0fa22e6bd873e4916ab96ea132d6cb1b76e7fdd2ade1d20", "url": "https://github.com/libsndfile/libsamplerate/archive/refs/tags/0.2.2.zip" },
+  "model": { "revision": "dd6818d00f50c836fed43a6243ebe49116de5964", "url": "https://huggingface.co/Ceva-IP/DPDFNet/resolve/dd6818d00f50c836fed43a6243ebe49116de5964/onnx/dpdfnet2_48khz_hr.onnx", "sha256": "7f0575a5cec0ba4ffd8f8bd657e06d007e4ccdd955d76faab922b9d3291dc14b" },
+  "officialReference": { "revision": "9bd9844a227bb6aa57e55588d8d0e961fcff1c46", "url": "https://raw.githubusercontent.com/ceva-ip/DPDFNet/9bd9844a227bb6aa57e55588d8d0e961fcff1c46/real_time_demo.py" },
+  "visualCppRuntime": { "version": "14.39.33321.0", "packageVersion": "14.0.33321.0", "url": "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx", "sha256": "b56a9101f706f9d95f815f5b7fa6efbac972e86573d378b96a07cff5540c5961" },
+  "developerPython": { "numpy": "2.2.6", "onnxruntime": "1.23.2", "onnx": "1.19.1" }
+}

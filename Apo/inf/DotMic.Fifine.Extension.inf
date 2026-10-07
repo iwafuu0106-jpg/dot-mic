@@ -1,0 +1,60 @@
+[Version]
+Signature="$WINDOWS NT$"
+Class=Extension
+ClassGuid={e2f84ce7-8efa-411c-aa69-97454ca4cb57}
+Provider=%Provider%
+ExtensionId={e8d7b791-48a6-4f41-81c5-3936e0643be7}
+DriverVer=10/07/2026,0.3.4.0
+CatalogFile=DotMic.Fifine.Extension.cat
+PnpLockDown=1
+[Manufacturer]
+%Provider%=Targets,NTamd64.10.0...22621
+[Targets.NTamd64.10.0...22621]
+%ExtensionDesc%=Install,USB\VID_3142&PID_00C1&MI_00
+[Install]
+[Install.Components]
+AddComponent=DotMicGate,,Apo_Component
+AddComponent=MsApoFxProxy,,Proxy_Component
+[Apo_Component]
+ComponentIDs=VEN_DOTM&CID_GATE_8F611FC3
+Description="DOT MIC Capture MFX component"
+[Proxy_Component]
+ComponentIDs=VEN_MSFT&CID_PROXYAPO
+Description="Microsoft APO Proxy"
+[Install.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,GLOBAL,CaptureFx
+AddInterface=%KSCATEGORY_CAPTURE%,GLOBAL,CaptureFx
+[CaptureFx]
+AddReg=MFX,CAPX
+[MFX]
+HKR,FX\0,%PKEY_FX_Association%,,%KSNODETYPE_MICROPHONE%
+HKR,FX\0,%PKEY_FX_ModeEffectClsid%,,%Clsid%
+; DEFAULT is the observed Discord Standard mode. No new SFX/EFX/RAW registration.
+HKR,FX\0,%PKEY_MFX_Modes%,0x00010000,%ModeDefault%
+[CAPX]
+HKR,FX\0\%Context%,%PKEY_FX_Association%,,%KSNODETYPE_MICROPHONE%
+; CAPX Open*PropertyStore opens existing stores only. KEYONLY never replaces values.
+HKR,FX\0\%Context%\User,,0x00000010
+HKR,FX\0\%Context%\Volatile,,0x00000010
+; Defaults only: OS-managed User values are never overwritten by installation.
+HKR,FX\0\%Context%\Default,"{91795F52-2DC0-4E20-A732-58816672E635},1",0x00010001,0
+HKR,FX\0\%Context%\Default,"{91795F52-2DC0-4E20-A732-58816672E635},2",,"0"
+HKR,FX\0\%Context%\Default,"{91795F52-2DC0-4E20-A732-58816672E635},3",0x00010001,0
+HKR,FX\0\%Context%\Default,"{91795F52-2DC0-4E20-A732-58816672E635},4",,"-48"
+HKR,FX\0\%Context%\Default,"{91795F52-2DC0-4E20-A732-58816672E635},5",,"5"
+HKR,FX\0\%Context%\Default,"{91795F52-2DC0-4E20-A732-58816672E635},6",,"160"
+HKR,FX\0\%Context%\Default,"{91795F52-2DC0-4E20-A732-58816672E635},7",,"120"
+HKR,FX\0\%Context%\Default,"{91795F52-2DC0-4E20-A732-58816672E635},8",0x00010001,0
+HKR,FX\0\%Context%\Default,"{91795F52-2DC0-4E20-A732-58816672E635},9",,"6"
+[Strings]
+Provider="DOT MIC"
+ExtensionDesc="DOT MIC fifine Capture MFX extension"
+Context="{7DD39E65-9848-4CDE-AF2A-910E9D160376}"
+Clsid="{8F611FC3-1A33-477D-9820-F8B9A11D1030}"
+KSCATEGORY_AUDIO="{6994AD04-93EF-11D0-A3CC-00A0C9223196}"
+KSCATEGORY_CAPTURE="{65E8773D-8F56-11D0-A3B9-00A0C9223196}"
+KSNODETYPE_MICROPHONE="{DFF21BE1-F70F-11D0-B917-00A0C9223196}"
+PKEY_FX_Association="{D04E05A6-594B-4FB6-A80D-01AF5EED7D1D},0"
+PKEY_FX_ModeEffectClsid="{D04E05A6-594B-4FB6-A80D-01AF5EED7D1D},6"
+PKEY_MFX_Modes="{D3993A3F-99C2-4402-B5EC-A92A0367664B},6"
+ModeDefault="{C18E2F7E-933D-4965-B7D1-1EEF228D2AF3}"

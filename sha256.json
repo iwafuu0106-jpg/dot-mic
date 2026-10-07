@@ -1,0 +1,642 @@
+﻿[
+    {
+        "Path":  ".gitignore",
+        "Hash":  "615CF96D1B6DF210915186132FC347E196067EFF406DC4B8DA4F4D386E9BE623"
+    },
+    {
+        "Path":  "CMakeLists.txt",
+        "Hash":  "DFAFC41FB2B2FF9CAEA34EA020D1545EB43686BC6057DB7796E9DC27723B9756"
+    },
+    {
+        "Path":  "dependencies.lock.json",
+        "Hash":  "82DF0EB10D2EA58D2077770E64B7B9CE4AA915A8E66A639C8BA05639963C7D9B"
+    },
+    {
+        "Path":  "DESIGN.md",
+        "Hash":  "C0E77F4FBBD43A3F4571DEE0E0046B76AEE541FD0F63A28E7C05BE323EA9437B"
+    },
+    {
+        "Path":  "dev.ps1",
+        "Hash":  "F957764E98DB59E3406ED179DA7239E34EE846BD6B19F2699345690FD04C3A4F"
+    },
+    {
+        "Path":  "global.json",
+        "Hash":  "66BB7E5E2E4C97A924B93D8728C2D64023E5752FD8EDD6A814EF4A5FF534BEFC"
+    },
+    {
+        "Path":  "LICENSE",
+        "Hash":  "D8C0FCD7BCE0F38579F6AB3AAE4594F7F7CA23C8760B9A0F4E64232B9AC1C062"
+    },
+    {
+        "Path":  "README.md",
+        "Hash":  "3E186316336276F6868DBEAFDC1B726E247CD220ECBC6A68D1667C9EECE249AB"
+    },
+    {
+        "Path":  "WORKLOG.md",
+        "Hash":  "4574A708C333567B1A07AD7805100313A41EAB9AB71824B90ADA36FFE60B1A3D"
+    },
+    {
+        "Path":  "Apo/apo.cpp",
+        "Hash":  "1A45C85F9CBBA54E98E20C90D62BCC0AD3C84C1EB208D6DBD5573F91814A7349"
+    },
+    {
+        "Path":  "Apo/async-path.h",
+        "Hash":  "B6E2B36AB82B09FF0AB361B72C322B7AD94B89E9A2D0D1BAA99F33C4CB944066"
+    },
+    {
+        "Path":  "Apo/async-tests.cpp",
+        "Hash":  "0570E77BEB227F8F543B5503C79A99E8EBC16311778CC375C1E0A57546017241"
+    },
+    {
+        "Path":  "Apo/build.ps1",
+        "Hash":  "673E5DDCCFC8D8B866BD49DC165C1424ED0ED7C2FBEC542DB5FD1B56556B22C7"
+    },
+    {
+        "Path":  "Apo/cli.cpp",
+        "Hash":  "E2FA935982AF37E239A98EE59B2D6E42B47E8BDB2E653F6A7B59CD04A07977D6"
+    },
+    {
+        "Path":  "Apo/CMakeLists.txt",
+        "Hash":  "D2EE6FBF012DCD2E634D319D7954D53CECD389E959B077D3B399E1C93D1C34B5"
+    },
+    {
+        "Path":  "Apo/control-api.h",
+        "Hash":  "23C973374CEE787033F8ADCD176E80454AEAD6F381C628F635F08B4DB59E6A2C"
+    },
+    {
+        "Path":  "Apo/control.cpp",
+        "Hash":  "705339EAE029E63DDEE048756140F9990F3F8A7A32358559AC02E37B7596F729"
+    },
+    {
+        "Path":  "Apo/deploy.ps1",
+        "Hash":  "975F3E6B83D2848DF03C3B8E0ED0229FEC8A8C932D9719174B1E6AC0DAC6FC9B"
+    },
+    {
+        "Path":  "Apo/endpoint.h",
+        "Hash":  "B974A12F63CB09225A92C1327192577F1E3DAA62BD10CF9F206F11CCEC068711"
+    },
+    {
+        "Path":  "Apo/inference-api.h",
+        "Hash":  "F263A4452AE4DFC85DD62A02CC133AAC90373D7F1D3757A493F6FE4287AEDE76"
+    },
+    {
+        "Path":  "Apo/inference-loader.h",
+        "Hash":  "2DEDDE5EB05849FC421E42B0A4AF83DF603E757F7DD6360238AAC68B7517F342"
+    },
+    {
+        "Path":  "Apo/inference.cpp",
+        "Hash":  "F80D970C479876E81D84DA171A22A2307BC7EABCC23E674CF5D6B3943B507119"
+    },
+    {
+        "Path":  "Apo/measure.ps1",
+        "Hash":  "E59DB8CEA9997CAE62EA651B0ABDEB4E6BE500D66D264A639334C985213D2DFD"
+    },
+    {
+        "Path":  "Apo/nc-worker.h",
+        "Hash":  "AC39B3CD012551286B3EDCF62E82F48CEF4C8F91204084B71ECE204C69F48CA5"
+    },
+    {
+        "Path":  "Apo/processing.h",
+        "Hash":  "082B7FE6A99DFE22FADBD6B0FBF2F70F17DCDF83FE2ED73439F40BC1CEC6CC54"
+    },
+    {
+        "Path":  "Apo/release.ps1",
+        "Hash":  "86B17643DF66B67D260221CC6043ADAB913C8B420EFE8A53E052C02990DEA884"
+    },
+    {
+        "Path":  "Apo/settings.h",
+        "Hash":  "250AD6B8FC5822EC2AAEB7139114E4302949A2EBCA5B9ABF77FF8E0A73CC1F23"
+    },
+    {
+        "Path":  "Apo/tests.cpp",
+        "Hash":  "F7EA3411570BE226A3C25DD038246D55043564DD8CA1D629134C15D2D43670C6"
+    },
+    {
+        "Path":  "Apo/trace.ps1",
+        "Hash":  "34D6CEE28D99C1916402AA9029F89B20B9B6257749B1489BC1FF9F3E3D14D9D7"
+    },
+    {
+        "Path":  "Apo/ui-check.ps1",
+        "Hash":  "EEDA806CEB85DDC83AA73345E14E1EB465DB53BC1A5514F8A60875A744BEBDEA"
+    },
+    {
+        "Path":  "Apo/worker-tests.cpp",
+        "Hash":  "B7C9DAB428817AD0D359341993AD71E50B6BF4E5C7E4DAEA93116EF56D0B58B2"
+    },
+    {
+        "Path":  "Apo/inf/DotMic.ApoGate.inf",
+        "Hash":  "646D09159A3B349C58ED856CAE178E00A43BA1862AB7664CEE02F30C4E0D35F8"
+    },
+    {
+        "Path":  "Apo/inf/DotMic.Fifine.Extension.inf",
+        "Hash":  "5D6DCB59E916679E95D5BDF6807E759CBEA14B6B1DFEB169FA10EB2C933311F2"
+    },
+    {
+        "Path":  "ApoGate/analyze.ps1",
+        "Hash":  "0FD48567F67DA97487E893B3804CF39152DACE11B62660766A628629DEC59411"
+    },
+    {
+        "Path":  "ApoGate/CMakeLists.txt",
+        "Hash":  "F40A8245A4C3E8E5ADC417FE57CA193E44E4C7461475948C1CDD18C0B9217C5D"
+    },
+    {
+        "Path":  "ApoGate/development.ps1",
+        "Hash":  "D185A539556963D56BAD8CC23383FC0669B4891D1AFF8764793CCB806B4878D6"
+    },
+    {
+        "Path":  "ApoGate/exports.def",
+        "Hash":  "6104AFE84345F2277705667D6801337B0E74522D8544A0E0F5EF68C3C5528DEF"
+    },
+    {
+        "Path":  "ApoGate/gate.ps1",
+        "Hash":  "40B46D1D53EE7B0D55B1163FDDB76A149EC9CE397D25F75A7FA3A4BE87FFDE62"
+    },
+    {
+        "Path":  "ApoGate/gate_ids.h",
+        "Hash":  "588B613B2517578787923F753C9EE5E02C73FF98172A5E9747389C371A92F70B"
+    },
+    {
+        "Path":  "ApoGate/headers.lock.json",
+        "Hash":  "783BE6951CD18A727071B6D1064B89AD17FD68F0EB2841AAA22ACFA876CF7B4C"
+    },
+    {
+        "Path":  "ApoGate/noop.cpp",
+        "Hash":  "49BF9101510494B7FFEABB65F34E2E2E12D632CA73E4896EC02733305D02E1A8"
+    },
+    {
+        "Path":  "ApoGate/pcm-proof-key.h",
+        "Hash":  "7FC0972E78A6419287A175A485C4F96719D3C28E06C18DAFAC5B09C1782F58C5"
+    },
+    {
+        "Path":  "ApoGate/pcm-proof.ps1",
+        "Hash":  "9398FA00E7FF8B371B793666248D5E06506CEEED1570D2D59C022C3F4A2AB3B8"
+    },
+    {
+        "Path":  "ApoGate/probe.cpp",
+        "Hash":  "34F98C3FDA4873949400BABD2E7574F38E136BA36B6A3B4E793DF250B4785C13"
+    },
+    {
+        "Path":  "ApoGate/README.md",
+        "Hash":  "3FD2C8DDD6ABBFCE4068452CAD96E69AB0CCDDFE5D56DAA2F39ECD92691470B7"
+    },
+    {
+        "Path":  "ApoGate/stableid-key.h",
+        "Hash":  "3916FE21A1825A7650A69A237BA8EB2AB4465E8444D51F1B3213FB2C993CDFD4"
+    },
+    {
+        "Path":  "ApoGate/trace.ps1",
+        "Hash":  "57C47618876E049FD1C416DE0653EC1C743F81A840439FEE8AB4347D10C7D264"
+    },
+    {
+        "Path":  "ApoGate/inf/DotMic.ApoGate.inf",
+        "Hash":  "3D0B2D2C4393638F08810C1753E03C20E7A7B8AF12D522D68B53DCBD43D0A6E4"
+    },
+    {
+        "Path":  "ApoGate/inf/DotMic.Fifine.Extension.inf",
+        "Hash":  "E2D97BFCB94F40E0048A620583BB71334DD3FAAE47ACFD62A1314146C2CEE2D4"
+    },
+    {
+        "Path":  "App/ApoSettings.cs",
+        "Hash":  "37E234F72DB70454606163790DBBF65854DEAB694CAAA898D0B1D7273A8C72C7"
+    },
+    {
+        "Path":  "App/app.manifest",
+        "Hash":  "29549FAA52DDE4BEF69E6CDD7938878381F170CEB253340A82B4BA967189345C"
+    },
+    {
+        "Path":  "App/App.xaml",
+        "Hash":  "3E33BCDB57CD1397AA0F7DE43886E3AB9A8E795B23DD6BF1D59737931CEA7CF7"
+    },
+    {
+        "Path":  "App/App.xaml.cs",
+        "Hash":  "827EDB8AF78007E84CD6170C5BC97817939878E48835CB77594EA732C0A9C141"
+    },
+    {
+        "Path":  "App/AudioStatus.cs",
+        "Hash":  "66E41A403A84712029CCEAC72E27333675B0534B8CB933E04B9436D357315E70"
+    },
+    {
+        "Path":  "App/AudioViewModel.cs",
+        "Hash":  "CB5B568979CF590FC4C106C0E31889811902F63F380ED54C454AE1A850DF4DD0"
+    },
+    {
+        "Path":  "App/CommunityIntegration.cs",
+        "Hash":  "776E977C3D03FF2B9605B0767A631E72DD0CA4D721B64B35DD6680FFA693238E"
+    },
+    {
+        "Path":  "App/DotMic.App.csproj",
+        "Hash":  "2E69885A925821A7EA53A80D44A4A13F0725B3ABB5E1AEE5752A070340667843"
+    },
+    {
+        "Path":  "App/GainDial.cs",
+        "Hash":  "16AA86916ECE2BEBFCD880E58865BA5E147A333BEB65A84E631A0029AC2D8EB1"
+    },
+    {
+        "Path":  "App/Motion.cs",
+        "Hash":  "07E7253EA67860E5FFE327DCA6F89CBD356F0C05101A9ADF5879285DE3173195"
+    },
+    {
+        "Path":  "App/packages.lock.json",
+        "Hash":  "70065B6BD441058B8442B7DD4A0A7A7BE2DD55DC58715976E1D1F6F43D5AD448"
+    },
+    {
+        "Path":  "App/RotaryGesture.cs",
+        "Hash":  "D18B7D600C1CB0593CEE288DC7DCC99D69847014BB074CE6CEFEA4798AAE7825"
+    },
+    {
+        "Path":  "App/Settings.cs",
+        "Hash":  "E8BD54599CAF7D12D9A93ED2115A083874CB6A1A52F1CE7C06818B8877A37A65"
+    },
+    {
+        "Path":  "App/Surface.cs",
+        "Hash":  "9AAF70C75BC1C85A2E2A0A3FB79A263516D53628C11BFE9624008845097CBC55"
+    },
+    {
+        "Path":  "App/Ui.cs",
+        "Hash":  "87CBAF52CC49EC7F8378E407893FB61A1C99A2AD05B459F62CAE9EFD436B3EDC"
+    },
+    {
+        "Path":  "App/Win32.cs",
+        "Hash":  "198E1F3591FD42D7B46D55E991B659FFB135769F6FF645DFD6CA8F9C8E8F2CBD"
+    },
+    {
+        "Path":  "App/Assets/DotMic.ico",
+        "Hash":  "C3963312D7411A42E12197FA7097B429B78866237BB5CE9BA35FEAE929E81CA2"
+    },
+    {
+        "Path":  "Community/build.ps1",
+        "Hash":  "9E5206C918CCFCF489923D7643C3A92666FAA6EFAE40507B6A718C7E22877A38"
+    },
+    {
+        "Path":  "Community/CMakeLists.txt",
+        "Hash":  "DA2D0EB0CA8E01D593521A08EFD85B4E25DA83B93255726B631B3D76D655C0AA"
+    },
+    {
+        "Path":  "Community/control-target.h",
+        "Hash":  "199AE64AA24E4364BF511ECE947902EC7E07682F948D7F2336C50B6F799DBDAB"
+    },
+    {
+        "Path":  "Community/discord-check.ps1",
+        "Hash":  "33A601FA9531914751E70564BD63680A3EE5890F10EAA91715128BDDD783441F"
+    },
+    {
+        "Path":  "Community/native.cpp",
+        "Hash":  "15D2BE0333CF70933009EFA80A45D93C1E1FAB620AF3DF3DCAFA3FBA39713B5F"
+    },
+    {
+        "Path":  "Community/prepare-payload.ps1",
+        "Hash":  "6EF0CA3F1DB9F1DED21D783913D71F0CAED492548D5394C728B7A8D461782A5F"
+    },
+    {
+        "Path":  "Community/PUBLIC-ACCEPTANCE.md",
+        "Hash":  "4574A708C333567B1A07AD7805100313A41EAB9AB71824B90ADA36FFE60B1A3D"
+    },
+    {
+        "Path":  "Community/PUBLIC-README.md",
+        "Hash":  "3E186316336276F6868DBEAFDC1B726E247CD220ECBC6A68D1667C9EECE249AB"
+    },
+    {
+        "Path":  "Community/README.md",
+        "Hash":  "3E186316336276F6868DBEAFDC1B726E247CD220ECBC6A68D1667C9EECE249AB"
+    },
+    {
+        "Path":  "Community/reference-clean-pnp.ps1",
+        "Hash":  "C7251E476780DCE7CC00A13DA54883819D2E0E82425660A8E8F40106C14AEB65"
+    },
+    {
+        "Path":  "Community/reference-install.ps1",
+        "Hash":  "7825DF038A459AFC05F7111D4F32986F794B71E1EEBF85C0CD29B94F68D356DD"
+    },
+    {
+        "Path":  "Community/reference-state.ps1",
+        "Hash":  "5B14D37B7E6E6AF1FD9599E155D09F844C600E49F6980F4C27B6DFED811008D6"
+    },
+    {
+        "Path":  "Community/reference-uninstall.ps1",
+        "Hash":  "65E5C44F33E7E64C0BA60A508E003D15E16D4185245C1957F04058B314131AE1"
+    },
+    {
+        "Path":  "Community/release.ps1",
+        "Hash":  "97611BD648920999DF364B47456F22450C6F0356C974365F864AB940AE755B60"
+    },
+    {
+        "Path":  "Community/SECURITY.md",
+        "Hash":  "AC39BF53672B2E3B0E6ADF15040DB82948397BA57D2B9AD2FC3A1E71D44097F2"
+    },
+    {
+        "Path":  "Community/source-build.ps1",
+        "Hash":  "7D8D60BF519B47A577309861758005A413A022F1B98AE5801469866E3B01351D"
+    },
+    {
+        "Path":  "Community/SOURCE.md",
+        "Hash":  "CFF9CF9DB19B9115BE80F8C707961D1A56EF2DB26D19C7E722443FFA3E20BF03"
+    },
+    {
+        "Path":  "Community/Setup/ApoPayload.lock.json",
+        "Hash":  "2787CEDE58BD6980D3BBD7BEF789A7EC1DF29B3C6F1602DD43E4290F178E9055"
+    },
+    {
+        "Path":  "Community/Setup/app.manifest",
+        "Hash":  "1D68AF61685D3512C277082D70B4525A80212AB8581AD9E612FB0825AE908D13"
+    },
+    {
+        "Path":  "Community/Setup/AudioService.cs",
+        "Hash":  "AD0C9ADED267B7E621EE4A533A0042683B9D3E146A12F3BA34E2C8B17F46E4BF"
+    },
+    {
+        "Path":  "Community/Setup/ConsentPolicy.cs",
+        "Hash":  "9B1471244658AFE11F4B5EFE7DB223A3F5A8A3DCC87E44747E895B41F2553B62"
+    },
+    {
+        "Path":  "Community/Setup/DotMic.Setup.csproj",
+        "Hash":  "0D8B5E01E19D5D8A247632640B4F4B112F4ABD218006D4CC3F82CD8BFD1A38A4"
+    },
+    {
+        "Path":  "Community/Setup/Integration.cs",
+        "Hash":  "57B2F2DC1811BDA3A8DCEC27149D16B1EAB36DE31B21D2A04D054B575B051D38"
+    },
+    {
+        "Path":  "Community/Setup/Models.cs",
+        "Hash":  "BC7052EF745F93BE7C86A2987BDE980A3198BFF91A1D505DA84C1E95DC5FE41D"
+    },
+    {
+        "Path":  "Community/Setup/Program.cs",
+        "Hash":  "BA09923E23BDA49F6EE21F5161B5861BE88B3B97F7666CF0BCE3FDBA3EB79783"
+    },
+    {
+        "Path":  "Community/Setup/RawRegistry.cs",
+        "Hash":  "5EF67C32B01DD7429ED0CDD4D6C4F1235F171FAE43F8A85D5640689EE9A6A71F"
+    },
+    {
+        "Path":  "Community/Setup/ReferenceMigration.cs",
+        "Hash":  "BBBA5A421D759355988899B1BEBC4AB86ABC967DE396C4AB343EA760D8252BD6"
+    },
+    {
+        "Path":  "Community/Setup/SecureStorage.cs",
+        "Hash":  "09BB935515F86C6A49D5D401FF8895F712ADBD4DB5C4940FFF33AE8FB0E4F91C"
+    },
+    {
+        "Path":  "Community/Setup/SetupForm.cs",
+        "Hash":  "CD5473D942E9CA64531E5FAAD34BC7BBF0A77F2B3D34207E3C9FBC86F2E7D021"
+    },
+    {
+        "Path":  "Community/Setup/Transaction.cs",
+        "Hash":  "380E99B7400CD4BAEA7B6E37A3C7B4DCE26976EE1369727D5B59749558C01373"
+    },
+    {
+        "Path":  "docs/apo-community.md",
+        "Hash":  "4574A708C333567B1A07AD7805100313A41EAB9AB71824B90ADA36FFE60B1A3D"
+    },
+    {
+        "Path":  "docs/apo-discord-evidence.md",
+        "Hash":  "157264D4FFCCA5FE9BE7A0DE90FB3332B9B13B0A448AB1629D49C267E765DDE2"
+    },
+    {
+        "Path":  "docs/apo-feasibility.md",
+        "Hash":  "2C8BB9F4125C4E35B7BDBE5964E14DEE8EE03D16296D25672865FC6B97EBEDCA"
+    },
+    {
+        "Path":  "docs/apo-inf-audit.md",
+        "Hash":  "8CBBD15B13C56AB31CB8128967C72A16AFA8753EC2CF420AB3983979E08ACAE4"
+    },
+    {
+        "Path":  "docs/apo-pcm-proof.md",
+        "Hash":  "DC9E147512390B929BA44BD8F14082C4EEDCEEEE6E1A976103F2A47F8EC1B7CD"
+    },
+    {
+        "Path":  "docs/apo-production.md",
+        "Hash":  "D51380F5C8E5A6B6C86798D4EF1D843C179E314BC063157408423A03D3F86F6C"
+    },
+    {
+        "Path":  "docs/apo-release.md",
+        "Hash":  "B90D3856F31CD81CA594B6FB9EA0B1F4DE89923CCEBBF01BB83F469AD20EE8E2"
+    },
+    {
+        "Path":  "docs/design/AUDIO_AND_NC.md",
+        "Hash":  "74D2ACADDB2213D76D338CA165EDC8AD51607BFE18526EE17DF7A0AE1655B2A4"
+    },
+    {
+        "Path":  "docs/design/defaults.json",
+        "Hash":  "6C4A51B643AD29704C9E98CE8E0EB1D2024F041A1D6C982D93D36CEB77B71ACF"
+    },
+    {
+        "Path":  "docs/design/IMPLEMENT.md",
+        "Hash":  "877E0CD80E65FB0AD6AC23A2EBDE884969C235E7562854446BBE0B73E3CB01A3"
+    },
+    {
+        "Path":  "docs/design/OPTIMIZATION_AND_TESTS.md",
+        "Hash":  "CB9225AF335BF5F70F6DE23FF60C7BB7D664E8010981A846C5651E191B645E0E"
+    },
+    {
+        "Path":  "docs/design/PRODUCT_AND_MOTION.md",
+        "Hash":  "7E23EEE1CC75C9E6FAE1EE48377DBF3ACC5432DF8528BA70EBA808BC5E3434A6"
+    },
+    {
+        "Path":  "docs/design/README.md",
+        "Hash":  "3E53B72CCCF8AD7D4F8258D9F9817B4F85AB63591C2B2B829F52EC86B16A9FA3"
+    },
+    {
+        "Path":  "docs/design/REVIEW.md",
+        "Hash":  "4ADD1E9FE79A4CD483F75F7B7C21E189B358B130FECE572E211F2C7EDD82B7B9"
+    },
+    {
+        "Path":  "docs/design/SOURCES.md",
+        "Hash":  "A0066606B847F3CBD0CADBD6F79455CD12990E9C18A351BD479E1AE9D29D738A"
+    },
+    {
+        "Path":  "docs/design/START_PROMPT.txt",
+        "Hash":  "E46D234580F66201AB5D3830BFE1A0899DCC587CF23E19918790783B92510657"
+    },
+    {
+        "Path":  "licenses/DOTNET-ThirdPartyNotices.txt",
+        "Hash":  "66F1D4E44973185519BB4AA8A9718EB22FC7AF2CC532E3AE9CFC4C127EE7FC54"
+    },
+    {
+        "Path":  "licenses/DOTNET.txt",
+        "Hash":  "CFC21F5E8BD655AE997EEC916138B707B1D290B83272C02A95C9F821B8C87310"
+    },
+    {
+        "Path":  "licenses/DPDFNet.txt",
+        "Hash":  "C71D239DF91726FC519C6EB72D318EC65820627232B2F796219E87DCF35D0AB4"
+    },
+    {
+        "Path":  "licenses/KissFFT-BSD-3-Clause.txt",
+        "Hash":  "4D6BCAB46F27D6D0C878E8305D4BDCFE040D52BF6656B9771F04C9FB9902C0ED"
+    },
+    {
+        "Path":  "licenses/KissFFT-Unlicense.txt",
+        "Hash":  "C543DAB3C100D8741A83B02F397746B1E10FC0046F30B942F308191A68E99407"
+    },
+    {
+        "Path":  "licenses/KissFFT.txt",
+        "Hash":  "A2840585F8411BE8E6826A31EF15AE65C950BD74A2437A73B013398A934AD0C6"
+    },
+    {
+        "Path":  "licenses/libsamplerate.txt",
+        "Hash":  "2C1F76CE2EFFDDDB425018405D5690C0B1AB4E6976E35296B0A6DB65C5E1A55D"
+    },
+    {
+        "Path":  "licenses/ONNXRuntime-ThirdPartyNotices.txt",
+        "Hash":  "E00F828E0A33DE591A355AE6606D2625F5758DA7D2C844DB7821C9DD3E3647B6"
+    },
+    {
+        "Path":  "licenses/ONNXRuntime.txt",
+        "Hash":  "2F07C72751AED99790B8A4869CF2311DF85A860B22DED05FA22803587A48922C"
+    },
+    {
+        "Path":  "licenses/README.md",
+        "Hash":  "F6A123C2CD1F792D7761C790D6D8C872FA5385F2E079F9761E731459C8DB732B"
+    },
+    {
+        "Path":  "licenses/VisualCpp-BuildTools-license.html",
+        "Hash":  "0C7C4474B9CC43D86710E05F8DEDB9DF0B9AEC767C5A66A5A60D25CFE6F6D125"
+    },
+    {
+        "Path":  "licenses/VisualCpp-Runtime-license.docx",
+        "Hash":  "F1E3D56CEB2AD68AAE0711B910375009E651AC5530FA0760F0DEA6E81E54FAE1"
+    },
+    {
+        "Path":  "licenses/VisualCpp-Runtime-license.html",
+        "Hash":  "18CC861A15E6A6871D162703F77BF8C12357AAF5BBE03D900C2DED048E260F60"
+    },
+    {
+        "Path":  "licenses/VisualCpp-Runtime-license.txt",
+        "Hash":  "CC093FFD7C6EFCD8E6CA317B9B6E3E39EF3501C09DD2532810CF0ACF792A3495"
+    },
+    {
+        "Path":  "licenses/WindowsAppSDK-Source.txt",
+        "Hash":  "C2CFCCB812FE482101A8F04597DFC5A9991A6B2748266C47AC91B6A5AAE15383"
+    },
+    {
+        "Path":  "licenses/WindowsAppSDK.txt",
+        "Hash":  "F9ED00147604BDC48C7E62D127D73245781CE53903CEF9C3863F8A7EF8120CC2"
+    },
+    {
+        "Path":  "models/profile.json",
+        "Hash":  "B48BEE26922B494C88C70213E1C0FB1A0B54D319E97203083CE4403AF9481877"
+    },
+    {
+        "Path":  "Native/api.cpp",
+        "Hash":  "918BB5F55307D521A96583E4035512D2C6D0667BD61AC48F769EDFA09D622716"
+    },
+    {
+        "Path":  "Native/core.h",
+        "Hash":  "79E722F8E86CDCF472DF4AE4C6143BC24FCCE1F285FE1E1F8E69DD34B31262FE"
+    },
+    {
+        "Path":  "Native/dotmic.h",
+        "Hash":  "0BD791FF49E3E62F7FB01757D82DA7740E7881739BA826EDCBAFA4BA340BA32B"
+    },
+    {
+        "Path":  "Native/engine.cpp",
+        "Hash":  "5A0114C2FBD7C233096462F39CDBFD3A311E5B4CC4302BDADF2E12251C5D7551"
+    },
+    {
+        "Path":  "Native/engine.h",
+        "Hash":  "F4E80ABD4B13DF3480F5E95524F10AEE831988FD6584BCE301B03ED3B34D2B0F"
+    },
+    {
+        "Path":  "Native/model.h",
+        "Hash":  "2F44142204C668826C4E03B1775747E050B4E3F53F319F93146C430F828729CB"
+    },
+    {
+        "Path":  "Native/model_hash.h",
+        "Hash":  "2DAF4E963E437CB9105AE7F57B95F40734CBAF0D49924BABDF56C8940A8EDF44"
+    },
+    {
+        "Path":  "reference-payload/concrt140.dll",
+        "Hash":  "6926DDADE5B6E67F1F8B2923D3CEA8C2C49A0242144C02E05CC5DD0B42468B7D"
+    },
+    {
+        "Path":  "reference-payload/DotMic.ApoGate.dll",
+        "Hash":  "CF045C9EE30834316E4327DBE1F1DB38B0A9208CD5DCC00A5DCB1A0B64E8817B"
+    },
+    {
+        "Path":  "reference-payload/DotMic.Inference.dll",
+        "Hash":  "D5AE2AD9162742F433C87F7D31F0141B721A244AFCA9EEEAD297B937209A6548"
+    },
+    {
+        "Path":  "reference-payload/dpdfnet2_48khz_hr.onnx",
+        "Hash":  "7F0575A5CEC0BA4FFD8F8BD657E06D007E4CCDD955D76FAAB922B9D3291DC14B"
+    },
+    {
+        "Path":  "reference-payload/msvcp140.dll",
+        "Hash":  "6FDC2C6FC1362C317ED65AE331DDA329D4D03826FEB8D79D635EAF8BA49764BC"
+    },
+    {
+        "Path":  "reference-payload/msvcp140_1.dll",
+        "Hash":  "6284349A2262B2329AA75AA8559980F9B2775DC5EC3A9E9ECDF55648AC7F625A"
+    },
+    {
+        "Path":  "reference-payload/msvcp140_2.dll",
+        "Hash":  "340E8E397BA46769D61384329EC611B7D96E1EFB8DE2F2D04941E3802A7DB784"
+    },
+    {
+        "Path":  "reference-payload/msvcp140_atomic_wait.dll",
+        "Hash":  "CFB61860C4949DEE0D295B0156DA77278DC676CC4DD820F71FD663C6390DB070"
+    },
+    {
+        "Path":  "reference-payload/msvcp140_codecvt_ids.dll",
+        "Hash":  "AA7F11D6B613705C561C6E2EC9CDBE61C339BB2380268DA337593C37E1F39D89"
+    },
+    {
+        "Path":  "reference-payload/onnxruntime.dll",
+        "Hash":  "DEC964AB1EE36CC9B0AE247D13B376627992FC57DEC0454354017AB8FD84F1EA"
+    },
+    {
+        "Path":  "reference-payload/onnxruntime_providers_shared.dll",
+        "Hash":  "A2B3A50956AA75A9879C8472BC7DF4F7A8072BCD2DB19A1B7D988E7688F293EF"
+    },
+    {
+        "Path":  "reference-payload/provenance.json",
+        "Hash":  "8EA62900F7B813917410865A28060D42C4C0CC933531F7095D4FC9D30FCC029D"
+    },
+    {
+        "Path":  "reference-payload/vccorlib140.dll",
+        "Hash":  "30951EEA089A38B405DD0E41A6AD47564911CA9418549F9A609129D6B4B0A497"
+    },
+    {
+        "Path":  "reference-payload/vcruntime140.dll",
+        "Hash":  "D5A99B38807C3DF803876CE5F1E71DC43CD7AC2C882582387E550941BC99CD00"
+    },
+    {
+        "Path":  "reference-payload/vcruntime140_1.dll",
+        "Hash":  "68F948EA61695F85FF24D249077E312ABB23267B3ADC43679D35D781E9AA0244"
+    },
+    {
+        "Path":  "tests/chrome-session.ps1",
+        "Hash":  "1098066B780F59EC3B217CD64ADC687898869C8AC3E14B88DB034DDF6AEBBB1E"
+    },
+    {
+        "Path":  "tests/core.cpp",
+        "Hash":  "F2964A6532B1C6151A92574F8B0FFF05A726091FA7BA055FCAB72C57332AD19E"
+    },
+    {
+        "Path":  "tests/desktop-session.ps1",
+        "Hash":  "323F51398809FB29CDA42E4E7A6B017926DE6646A804AD6E4819D684CF77D9B4"
+    },
+    {
+        "Path":  "tests/fixture.f32",
+        "Hash":  "7D276701E703CD83BCD4B0EADE218F65DFC51463AF7C8146E214089FC5F87ADE"
+    },
+    {
+        "Path":  "tests/official_streaming.py",
+        "Hash":  "E17CF02D47506894C7EDE6B167E91B3C5FB8491CFB9675EB27B4107574E3BC59"
+    },
+    {
+        "Path":  "tests/reference.f32",
+        "Hash":  "999A983F3C7BEF2D9EF27BC27AA8A875680A018022EB3BEB398D134E5447B105"
+    },
+    {
+        "Path":  "tests/reference.py",
+        "Hash":  "2BC6D9C5F044EA8671B472E114AE4AF4E4F10BBFF50F7B5F4C7C229E42E0F825"
+    },
+    {
+        "Path":  "tests/dial/Dial.Check.csproj",
+        "Hash":  "CC31EEFBC703566CD2EA6B44FFE2EF614C4D7294DD866D07670E91633C6F83D4"
+    },
+    {
+        "Path":  "tests/dial/Program.cs",
+        "Hash":  "6C873A6A673A7A47AEFA5C04A76A7AA4CE822BBA3FF51066B4C9D19E8572911D"
+    }
+]

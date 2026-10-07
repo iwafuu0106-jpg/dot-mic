@@ -1,0 +1,26 @@
+cmake_minimum_required(VERSION 3.20)
+project(DotMic VERSION 3.2 LANGUAGES C CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+add_subdirectory(Apo)
+
+# Optional offline regression fixtures. No endpoint transport or product DLL.
+# Fixed 44.1/48-kHz SRC remains here; the APO needs no independent clock servo.
+option(DOTMIC_BUILD_OFFLINE_FIXTURES "Build retained model/DSP/fixed-SRC fixtures" OFF)
+if(DOTMIC_BUILD_OFFLINE_FIXTURES)
+  set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+  set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+  set(LIBSAMPLERATE_EXAMPLES OFF CACHE BOOL "" FORCE)
+  set(LIBSAMPLERATE_INSTALL OFF CACHE BOOL "" FORCE)
+  add_subdirectory(.deps/libsamplerate-0.2.2 EXCLUDE_FROM_ALL)
+  set(ORT "${CMAKE_SOURCE_DIR}/.deps/onnxruntime-win-x64-1.23.2")
+  add_executable(DotMic.FixtureCheck tests/core.cpp Native/engine.cpp)
+  target_include_directories(DotMic.FixtureCheck PRIVATE Native "${ORT}/include")
+  target_compile_definitions(DotMic.FixtureCheck PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN _CRT_SECURE_NO_WARNINGS)
+  target_compile_options(DotMic.FixtureCheck PRIVATE /W4 /permissive- /utf-8)
+  target_link_libraries(DotMic.FixtureCheck PRIVATE kissfft samplerate "${ORT}/lib/onnxruntime.lib" bcrypt)
+  file(GLOB VCRT_FILES "${CMAKE_SOURCE_DIR}/.deps/vclibs/*.dll")
+  add_custom_command(TARGET DotMic.FixtureCheck POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${ORT}/lib/onnxruntime.dll" ${VCRT_FILES} "$<TARGET_FILE_DIR:DotMic.FixtureCheck>")
+endif()

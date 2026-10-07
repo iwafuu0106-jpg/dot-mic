@@ -1,0 +1,4 @@
+LIBRARY "DotMic.ApoGate.dll"
+EXPORTS
+    DllGetClassObject PRIVATE
+    DllCanUnloadNow PRIVATE

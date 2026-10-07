@@ -1,0 +1,23 @@
+# Community integrationの変更と同意
+
+## Protected AudioDG
+
+Community方式では`HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio\DisableProtectedAudioDG=1`を使用します。DOT MICだけに限らず、Windows全体のProtected Audio / secure audio pathへ影響し、一部DRMコンテンツやサービスが動作しなくなる可能性があります。Secure Boot、Memory Integrity、TESTSIGNINGやWindowsのコード整合性設定は変更しません。
+
+Setupは変更前の未存在／0／1などの型とraw dataを保存し、適用前に説明します。同意しなければキャンセルします。導入前から1であった値をDOT MICが新たに変更したものとは扱いません。
+
+Uninstallでは導入前の状態を表示します。DOT MICが未存在または0から1へ変更した場合、導入前へ戻すか現在設定を維持するかを選べます。他アプリの依存を完全検出できるとは説明しません。
+
+## 既存Audio Effectとpermission
+
+同じMFX位置にメーカー効果やEqualizer APOがある場合、DOT MICで置換するとその効果が停止する可能性があります。複雑なchainingやvendor内部解析は行いません。型とraw dataを保存し、説明への同意後に置換します。
+
+特殊ACLそのものを理由に拒否しません。通常管理者権限で書込み可能か確認し、不足時だけAdvanced Compatibilityで対象key・現owner・必要権限・復元を説明します。許可後に対象keyだけ一時permissionを変更し、書込み直後に元owner/ACLへ戻します。MMDevices全体へFull Controlを付与しません。完全なsnapshot／read-back／rollbackが成立しない変更は実行しません。
+
+## ロードと配布
+
+audiodgのAPO/model/runtimeは固定Program Filesに配置し、一般ユーザーには読取り／実行だけを許可します。Recovery snapshotは管理者管理のProgramDataへatomic保存し、checksumで破損を検出します。checksumはAuthenticodeや外部署名の代替ではありません。
+
+UI/SetupのAuthenticode署名やSmartScreen reputationを保証しません。警告が表示される可能性があります。自己署名Root certificateのインストール、セキュリティ設定変更、有料証明書の購入は要求しません。依存DLLの既存署名は保持します。
+
+Equalizer APOは公開インストール文書から方式の先例だけを調査しました。GPLの実装コードは取り込みません。DOT MICと依存物のライセンスは配布内の`licenses/`を参照してください。

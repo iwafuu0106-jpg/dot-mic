@@ -1,0 +1,28 @@
+﻿{
+    "Version":  "0.4.0-community",
+    "Tag":  "v0.4.0-community",
+    "Time":  "2026-10-07T21:05:28.8500531+09:00",
+    "Artifacts":  [
+                      {
+                          "File":  "0.4.0-community.zip",
+                          "Sha256":  "93B940C91DBC43A49661B4CA323110B1C9D037DDF24D8B8697D954CF31B13976",
+                          "Bytes":  143229503
+                      },
+                      {
+                          "File":  "0.4.0-community-source.zip",
+                          "Sha256":  "88C1E36A7FE65710C24E5CB7095C8460A6CA80E0E870060D5AD59F5A443B0265",
+                          "Bytes":  17294080
+                      }
+                  ],
+    "SecretPrivateKeyScan":  "PASS",
+    "LicenseCheck":  "PASS",
+    "ReadmeCommunityNotice":  "PASS",
+    "VersionConsistency":  "PASS release identity; UI component version explicitly distinguished",
+    "PublicHistory":  "Clean snapshot authorized; old local history retained",
+    "Changes":  "Docs, machine-evidence exclusion, PDB exclusion, two CodeView filename redactions only",
+    "IlResourcesDspModelInstallerBehaviorUnchanged":  true,
+    "FunctionalTestsRepeated":  0,
+    "OriginalArtifactsRecord":  "original-artifact-freeze.json",
+    "ReleaseReady":  true,
+    "PublishState":  "Ready to commit and publish"
+}
