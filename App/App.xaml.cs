@@ -83,9 +83,9 @@ public partial class DotMicApplication : Application
                 tray?.SetState($"DOT MIC · {(model.Status.running != 0 ? "音声処理中" : "停止")} · NC {model.NcText}{(model.Notice.Length > 0 ? " · 要確認" : "")}");
             }
         };
-        if (!startup || !model.Settings.Resident || !model.Ready) ShowMain(); else { main.AppWindow.Hide(); flyout.AppWindow.Hide(); UpdateVisibility(); }
+        if (!startup || !model.Ready) ShowMain(); else { main.AppWindow.Hide(); flyout.AppWindow.Hide(); UpdateVisibility(); }
         await model.InitializeAsync();
-        if (startup && model.Settings.Resident && model.Ready) { main.AppWindow.Hide(); flyout.AppWindow.Hide(); UpdateVisibility(); }
+        if (startup && model.Ready) { main.AppWindow.Hide(); flyout.AppWindow.Hide(); UpdateVisibility(); }
         if (smoke) { await RunSmokeAsync(); return; }
         if (!model.Ready && !exiting)
         {
@@ -158,9 +158,8 @@ public partial class DotMicApplication : Application
     }
     internal void CloseMain()
     {
-        if (model?.Settings.Resident == true)
-        { if (tray?.Registered == true) _ = HideMainAsync(); else model.SetNotice("トレイアイコンがありません。メニューの「終了」を使用してください。"); }
-        else _ = ExitAsync();
+        if (tray?.Registered == true) _ = HideMainAsync();
+        else model?.SetNotice("トレイアイコンがありません。メニューの「終了」を使用してください。");
     }
     private async Task HideMainAsync()
     {

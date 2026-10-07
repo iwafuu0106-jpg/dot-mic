@@ -11,13 +11,12 @@ namespace DotMic;
 // Composition owns time: no per-control animation timers and no semantic ambient motion.
 internal sealed class MotionHub
 {
-    private readonly AudioViewModel model;
     private readonly UISettings system = new();
     private readonly List<Region> regions = [];
     private readonly ConditionalWeakTable<FrameworkElement, RevealAnimations> reveals = new();
     private readonly ConditionalWeakTable<FrameworkElement, ScalarKeyFrameAnimation> stagger = new();
     private bool active;
-    internal MotionMode Mode => model.Settings.Motion == MotionMode.Full && !system.AnimationsEnabled ? MotionMode.Reduced : model.Settings.Motion;
+    internal MotionMode Mode => system.AnimationsEnabled ? MotionMode.Full : MotionMode.Off;
     internal sealed class Region
     {
         internal required FrameworkElement Element;
@@ -41,7 +40,7 @@ internal sealed class MotionHub
         internal required Vector3KeyFrameAnimation Offset, Scale;
         internal required CompositionEasingFunction Enter, Exit;
     }
-    internal MotionHub(AudioViewModel vm) { model = vm; }
+    internal MotionHub(AudioViewModel vm) { }
     internal static Visual VisualFor(FrameworkElement element)
     {
         // XAML owns Offset for layout. Translation is the supported additive motion property.

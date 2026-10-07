@@ -23,7 +23,7 @@ internal static class CommunityIntegration
         try {
             using var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
             using var config = hklm.OpenSubKey(Config, false);
-            if (config == null) return new(HealthKind.MissingIntegration, "マイク統合がありません。Setupからインストールできます。");
+            if (config == null) return new(HealthKind.MissingIntegration, "未導入です。セットアップでマイクを選択して導入してください。");
             string stable = config.GetValue("StableId") as string ?? "", container = config.GetValue("ContainerId") as string ?? "", physical = config.GetValue("PhysicalInterface") as string ?? "";
             int hr = dm_community_endpoints(null, 0, out uint required); if (hr != unchecked((int)0x8007007A)) Marshal.ThrowExceptionForHR(hr);
             if (required is 0 or > 1024 * 1024) return new(HealthKind.Unknown, "マイク統合の状態を取得できません。");
@@ -31,7 +31,7 @@ internal static class CommunityIntegration
             var all = JsonSerializer.Deserialize<Endpoint[]>(buffer.ToString()) ?? [];
             var matches = all.Where(e => e.StableId == stable && stable.Length > 0 && (container.Length == 0 || e.ContainerId.Equals(container, StringComparison.OrdinalIgnoreCase))).ToArray();
             if (matches.Length == 0 && container.Length > 0 && physical.Length > 0) matches = all.Where(e => e.ContainerId.Equals(container, StringComparison.OrdinalIgnoreCase) && e.PhysicalInterface.Equals(physical, StringComparison.OrdinalIgnoreCase)).ToArray();
-            if (matches.Length != 1) return new(HealthKind.NeedsSelection, "対象マイクを一意に取得できません。接続とSetupの対象を確認してください。");
+            if (matches.Length != 1) return new(HealthKind.NeedsSelection, "マイクを特定できません。接続とセットアップで選んだマイクを確認してください。");
             using var fx = hklm.OpenSubKey(matches[0].FxPath, false);
             if (!string.Equals(fx?.GetValue("{D04E05A6-594B-4FB6-A80D-01AF5EED7D1D},6") as string, Clsid, StringComparison.OrdinalIgnoreCase) || fx?.GetValue(Clsid + ",100") != null)
                 return new(HealthKind.RepairRequired, "マイク統合が変更されています。修復できます。");
@@ -55,10 +55,10 @@ internal static class CommunityIntegration
         } catch (Exception e) { return new(HealthKind.Unknown, "マイク統合の状態を取得できません: " + e.Message); }
     }
     private sealed record RequiredFile(string Path, string Hash);
-    internal static void Repair()
+    internal static void Repair(bool repair = true)
     {
-        string path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "DotMic.Setup.exe"));
-        if (!File.Exists(path)) throw new FileNotFoundException("Community ZIPをすべて展開し、同梱Setupを使用してください。", path);
-        Process.Start(new ProcessStartInfo(path) { UseShellExecute = true, Verb = "runas", Arguments = "--repair" });
+        string path = AppEntryPaths.Setup(AppContext.BaseDirectory);
+        if (!File.Exists(path)) throw new FileNotFoundException("ZIPをすべて展開し、同梱のセットアップを開いてください。", path);
+        Process.Start(new ProcessStartInfo(path) { UseShellExecute = true, Verb = Path.GetFileName(path) == "セットアップ.exe" ? "open" : "runas", Arguments = repair ? "--repair" : "" });
     }
 }

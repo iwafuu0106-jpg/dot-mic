@@ -254,7 +254,7 @@ internal sealed class Transaction
                 if (marker.Before != null) throw new IOException("Unexpected setup marker value"); Receipt.Edits.Add(marker); Write(marker);
                 var remove = new Edit { Path = path, Name = marker.Name, Before = marker.After, After = null }; Receipt.Edits.Add(remove); Write(remove);
             }
-            foreach (var pair in new[] { (1u, 1f), (2u, 0f), (3u, 0f), (8u, 0f) }) {
+            foreach (var pair in SetupDefaults.Controls) {
                 string path = Receipt.Target.FxPath + "\\" + Contract.Context + "\\User", name = "{91795F52-2DC0-4E20-A732-58816672E635}," + pair.Item1;
                 byte[] data = new byte[12]; BitConverter.GetBytes(4u).CopyTo(data, 0); BitConverter.GetBytes(1u).CopyTo(data, 4); BitConverter.GetBytes(pair.Item2).CopyTo(data, 8);
                 var edit = new Edit { Path = path, Name = name, Before = RawRegistry.Value(path, name), After = new(name, 3, data), Applied = true }; Receipt.Edits.Add(edit);

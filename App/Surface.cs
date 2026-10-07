@@ -30,7 +30,7 @@ internal sealed class Surface : UserControl
     private readonly ScalarKeyFrameAnimation deviceRotation;
     private readonly ToggleSwitch gate = new() { FontSize = 12, MinWidth = 40, OnContent = "", OffContent = "" };
     private readonly ToggleSwitch nc = new() { FontSize = 12, MinWidth = 40, OnContent = "", OffContent = "" };
-    private readonly TextBlock connection = Ui.Label("未接続", 12), gateState = Ui.Label("OFF", 10), ncState = Ui.Label("OFF", 10);
+    private readonly TextBlock connection = Ui.Label("未接続", 12), gateState = Ui.Label("無効", 10), ncState = Ui.Label("無効", 10);
     private readonly TextBlock deviceName = Ui.Label("マイク選択", 12), inputValue = Ui.Label("−∞", 10), outputValue = Ui.Label("−∞", 10);
     private readonly Rectangle inLevel = new() { Fill = Ui.Accent, Height = 4 }, outLevel = new() { Fill = Ui.Accent, Height = 4 };
     private readonly TextBlock limit = Ui.Label("", 10);
@@ -84,7 +84,7 @@ internal sealed class Surface : UserControl
         Dial = new(vm, small, Motion); center.Children.Add(Dial);
         var meters = new Grid { Width = small ? 168 : 208, ColumnSpacing = 16 };
         meters.ColumnDefinitions.Add(new() { Width = new GridLength(1, GridUnitType.Star) }); meters.ColumnDefinitions.Add(new() { Width = new GridLength(1, GridUnitType.Star) });
-        meters.Children.Add(Meter("IN", inLevel, inputValue)); var outputMeter = Meter("OUT", outLevel, outputValue); Grid.SetColumn(outputMeter, 1); meters.Children.Add(outputMeter);
+        meters.Children.Add(Meter("入力", inLevel, inputValue)); var outputMeter = Meter("出力", outLevel, outputValue); Grid.SetColumn(outputMeter, 1); meters.Children.Add(outputMeter);
         center.Children.Add(meters); limit.Foreground = Ui.Warning; limit.HorizontalAlignment = HorizontalAlignment.Center; limit.Visibility = Visibility.Collapsed; center.Children.Add(limit); AddRow(center, 1);
         Dial.Slider.AddHandler(UIElement.PointerCaptureLostEvent, new PointerEventHandler((_, _) => DispatcherQueue.TryEnqueue(owner.DismissFlyoutIfInactive)), true);
         var gateRow = Row("ノイズゲート", gate, out var gateLabel); gateLabel.Children.Add(gateState);
@@ -123,8 +123,8 @@ internal sealed class Surface : UserControl
         connection.Foreground = model.Notice.Length > 0 ? Ui.Warning : Ui.Secondary;
         var content = (StackPanel)threshold.Content; ((TextBlock)content.Children[0]).Text = $"{model.Settings.Threshold:0} dB";
         AutomationProperties.SetName(threshold, $"ゲート開閾値 {model.Settings.Threshold:0} dB。詳細を開く");
-        gateState.Text = !model.Settings.Gate ? "OFF" : model.Status.running == 0 ? "停止" : model.Status.gateOpen != 0 ? "開" : "閉";
-        ncState.Text = model.Status.running == 0 ? model.Settings.Nc ? "要求ON · 停止" : "OFF" : model.NcText;
+        gateState.Text = !model.Settings.Gate ? "無効" : model.Status.running == 0 ? "停止" : model.Status.gateOpen != 0 ? "通過" : "遮断";
+        ncState.Text = model.Status.running == 0 ? model.Settings.Nc ? "有効・入力待ち" : "無効" : model.NcText;
         ncState.Foreground = model.Status.ncState == 5 ? Ui.Warning : Ui.Secondary;
         gateState.Visibility = model.Settings.Gate ? Visibility.Visible : Visibility.Collapsed;
         ncState.Visibility = model.Settings.Nc || model.Status.ncState != 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -135,7 +135,7 @@ internal sealed class Surface : UserControl
             UpdateMeter(outLevel, outputValue, model.Status.running != 0 ? model.Status.outputPeak : 0);
             AutomationProperties.SetName(inLevel, $"入力ピーク {Db(model.Status.inputPeak):0.0} dBFS");
             AutomationProperties.SetName(outLevel, $"出力ピーク {Db(model.Status.outputPeak):0.0} dBFS");
-            limit.Text = "LIMIT";
+            limit.Text = "音量制限中";
             limit.Visibility = model.Limit && model.Status.running != 0 ? Visibility.Visible : Visibility.Collapsed;
         }
         if (oldNotice != model.Notice) { oldNotice = model.Notice; AutomationProperties.SetHelpText(device, model.Notice); }
@@ -197,19 +197,15 @@ internal sealed class Surface : UserControl
         void Add(string text, Func<Task> action) { var button = Ui.Button(text, text); panel.Children.Add(button); Motion.Attach(button, Motion.Register(button, "item", 0)); button.Click += async (_, _) => { menuFlyout!.Hide(); await action(); }; }
         if (compact) Add("メインを開く", () => { owner.ShowMain(); return Task.CompletedTask; });
         bool menuRefresh = false;
-        var resident = new ToggleSwitch { Header = "トレイに常駐", IsOn = model.Settings.Resident }; panel.Children.Add(resident);
-        resident.Toggled += (_, _) => { if (menuRefresh) return; model.Update(s => s.Resident = resident.IsOn); if (!resident.IsOn && compact) owner.ShowMain(); };
-        var startup = new ToggleSwitch { Header = "サインイン時に起動", IsOn = StartupRegistration.Enabled }; panel.Children.Add(startup);
-        var startupNote = Ui.Label("Windowsの起動許可は別設定です。", 10); panel.Children.Add(startupNote);
-        startup.Toggled += (_, _) => { if (menuRefresh) return; try { StartupRegistration.Set(startup.IsOn); startupNote.Foreground = Ui.Secondary; startupNote.Text = startup.IsOn ? "起動登録を確認しました。Windows側の起動許可も確認してください。" : "起動登録を解除しました。"; } catch (Exception e) { startupNote.Foreground = Ui.Warning; startupNote.Text = e.Message; model.SetNotice(e.Message); menuRefresh = true; startup.IsOn = StartupRegistration.Enabled; menuRefresh = false; } };
-        var bypass = new ToggleSwitch { Header = "Master Bypass", IsOn = model.Settings.MasterBypass }; panel.Children.Add(bypass);
+        var startup = new ToggleSwitch { Header = "サインイン時に起動", OnContent = "有効", OffContent = "無効", IsOn = StartupRegistration.Enabled }; panel.Children.Add(startup);
+        var startupNote = Ui.Label("", 10); startupNote.Visibility = Visibility.Collapsed; panel.Children.Add(startupNote);
+        startup.Toggled += (_, _) => { if (menuRefresh) return; try { StartupRegistration.Set(startup.IsOn); model.Update(s => s.StartOnSignIn = startup.IsOn); model.SetStartupNotice(""); startupNote.Visibility = Visibility.Collapsed; } catch (Exception e) { startupNote.Foreground = Ui.Warning; startupNote.Text = e.Message; startupNote.Visibility = Visibility.Visible; model.SetStartupNotice("サインイン時の起動を設定できません：" + e.Message); menuRefresh = true; startup.IsOn = StartupRegistration.Enabled; menuRefresh = false; } };
+        var bypass = new ToggleSwitch { Header = "バイパス（処理を停止）", OnContent = "有効", OffContent = "無効", IsOn = model.Settings.MasterBypass }; panel.Children.Add(bypass);
         AutomationProperties.SetAutomationId(bypass, "MasterBypassToggle");
         bypass.Toggled += (_, _) => { if (!menuRefresh) model.Update(s => s.MasterBypass = bypass.IsOn); };
         Add("マイク", ConnectionAsync);
-        Add("設定を再取得", model.RefreshAsync);
-        var mode = new ComboBox { Header = "モーション", ItemsSource = Enum.GetValues<MotionMode>(), SelectedItem = model.Settings.Motion, HorizontalAlignment = HorizontalAlignment.Stretch }; panel.Children.Add(mode);
-        mode.SelectionChanged += (_, _) => { if (!menuRefresh && mode.SelectedItem is MotionMode m) model.Update(s => s.Motion = m); };
-        Add("接続案内", GuideAsync); Add("診断", DiagnosticsAsync);
+        Add("セットアップ", model.RepairAsync);
+        Add("診断", DiagnosticsAsync);
         var menuBody = new Grid { RowSpacing = 8 };
         menuBody.RowDefinitions.Add(new() { Height = new GridLength(1, GridUnitType.Star) }); menuBody.RowDefinitions.Add(new() { Height = GridLength.Auto });
         var menuScroll = new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
@@ -219,7 +215,7 @@ internal sealed class Surface : UserControl
         var flyout = new Flyout { Content = menuBody, Placement = FlyoutPlacementMode.BottomEdgeAlignedRight };
         flyout.FlyoutPresenterStyle = new Style(typeof(FlyoutPresenter)) { Setters = { new Setter(Control.BackgroundProperty, Ui.Panel), new Setter(Control.BorderBrushProperty, Ui.Dots), new Setter(Control.CornerRadiusProperty, new CornerRadius(4)), new Setter(FrameworkElement.WidthProperty, 284d), new Setter(FlyoutPresenter.IsDefaultShadowEnabledProperty, false) } };
         flyout.Opening += (_, _) => menuScroll.MaxHeight = Math.Max(120, Math.Min(560, XamlRoot.Size.Height - 96) - 52);
-         flyout.Opened += (_, _) => { menuRefresh = true; resident.IsOn = model.Settings.Resident; startup.IsOn = StartupRegistration.Enabled; bypass.IsOn = model.Settings.MasterBypass; mode.SelectedItem = model.Settings.Motion; menuRefresh = false; PopupOpen = true; SetMenuShape(true); Motion.Reveal(panel, true, true); SetActive(owner.IsVisible(this)); };
+         flyout.Opened += (_, _) => { menuRefresh = true; startup.IsOn = StartupRegistration.Enabled; bypass.IsOn = model.Settings.MasterBypass; menuRefresh = false; PopupOpen = true; SetMenuShape(true); Motion.Reveal(panel, true, true); SetActive(owner.IsVisible(this)); };
         flyout.Closed += (_, _) => { PopupOpen = false; SetMenuShape(false); DispatcherQueue.TryEnqueue(() => { SetActive(owner.IsVisible(this)); owner.DismissFlyoutIfInactive(); }); };
         menuFlyout = flyout; // Manual toggling only; do not also enable Button's automatic Flyout opening.
     }
@@ -263,7 +259,7 @@ internal sealed class Surface : UserControl
         var body = new StackPanel { Spacing = 12 };
         body.Children.Add(Ui.Label(model.InputName, 13));
         if (model.Notice.Length > 0) { var error = Ui.Label(model.Notice, 12); error.Foreground = Ui.Warning; body.Children.Add(error); }
-        var dialog = Dialog("マイク", body, model.IntegrationNeedsRepair ? "修復" : model.IntegrationNeedsSetup ? "Setup" : "");
+        var dialog = Dialog("マイク", body, model.IntegrationNeedsRepair ? "修復" : model.IntegrationNeedsSetup ? "導入" : "");
         if (model.IntegrationNeedsRepair || model.IntegrationNeedsSetup) dialog.PrimaryButtonClick += (_, _) => _ = model.RepairAsync();
         await ShowAsync(dialog, body);
     }
@@ -278,22 +274,18 @@ internal sealed class Surface : UserControl
             AutomationProperties.SetName(box, text); body.Children.Add(box);
             box.ValueChanged += (_, e) => { if (!double.IsFinite(e.NewValue) || e.NewValue < min || e.NewValue > max) { box.Value = e.OldValue; return; } model.Update(s => set(s, e.NewValue)); closeThreshold.Text = $"閉じる閾値: {model.Settings.Threshold - model.Settings.Hysteresis:0.#} dBFS"; };
         }
-        Add("開く閾値 dBFS（−80〜−10）", model.Settings.Threshold, -80, -10, (s, v) => s.Threshold = v);
-        Add("閉じる差分 dB（2〜12）", model.Settings.Hysteresis, 2, 12, (s, v) => s.Hysteresis = v);
-        Add("Attack ms（1〜30）", model.Settings.Attack, 1, 30, (s, v) => s.Attack = v);
-        Add("Hold ms（50〜500）", model.Settings.Hold, 50, 500, (s, v) => s.Hold = v);
-        Add("Release ms（30〜500）", model.Settings.Release, 30, 500, (s, v) => s.Release = v);
+        Add("音を通すレベル（dBFS）", model.Settings.Threshold, -80, -10, (s, v) => s.Threshold = v);
+        Add("停止レベルとの差（dB）", model.Settings.Hysteresis, 2, 12, (s, v) => s.Hysteresis = v);
+        Add("開く時間（ms）", model.Settings.Attack, 1, 30, (s, v) => s.Attack = v);
+        Add("維持する時間（ms）", model.Settings.Hold, 50, 500, (s, v) => s.Hold = v);
+        Add("閉じる時間（ms）", model.Settings.Release, 30, 500, (s, v) => s.Release = v);
         closeThreshold.Text = $"閉じる閾値: {model.Settings.Threshold - model.Settings.Hysteresis:0.#} dBFS"; body.Children.Add(closeThreshold);
         await ShowAsync(Dialog("ゲート詳細", body), body);
-    }
-    private async Task GuideAsync()
-    {
-        var guide = new StackPanel { Spacing = 8 }; guide.Children.Add(Ui.Label(CommunityIntegration.Enabled ? "Discordの入力は従来の物理マイクのまま使用します。導入・修復・削除は同梱Setupを使用してください。" : "Discordの入力はマイク (fifine Ampli1) のまま使用します。APOの導入・削除は同梱手順を参照してください。", 13)); await ShowAsync(Dialog("使用方法", guide), guide);
     }
     private async Task DiagnosticsAsync()
     {
         var body = new StackPanel { Spacing = 10 }; var text = new TextBlock { IsTextSelectionEnabled = true, TextWrapping = TextWrapping.Wrap, FontSize = 12, Foreground = Ui.Primary }; body.Children.Add(text);
-        string Snapshot() { var s = model.Status; return $"DOT MIC\n{model.Notice}\n入力: {model.InputName}\nMaster Bypass: {model.Settings.MasterBypass}\nNC要求: {model.Settings.Nc} / {model.NcText}\nRuns: {s.runs} / Wet: {s.wetBlocks} / Fallback: {s.fallbackBlocks}\nFaults: {s.faults}\n固定遅延: 83 ms"; }
+        string Snapshot() { var s = model.Status; return $"DOT MIC\n{model.Notice}\n入力: {model.InputName}\nバイパス: {(model.Settings.MasterBypass ? "有効" : "無効")}\nノイズ除去: {model.NcText}\n推論回数: {s.runs} / 採用区間: {s.wetBlocks} / 原音区間: {s.fallbackBlocks}\n異常回数: {s.faults}\n固定遅延: 83 ms"; }
         var copy = Ui.Button("数値と状態をコピー", "診断をクリップボードにコピー"); body.Children.Add(copy); copy.Click += (_, _) => { var data = new DataPackage(); data.SetText(Snapshot()); Clipboard.SetContent(data); };
         System.ComponentModel.PropertyChangedEventHandler handler = (_, _) => text.Text = Snapshot(); model.PropertyChanged += handler; text.Text = Snapshot();
         try { await ShowAsync(Dialog("診断（実測状態）", body), body); } finally { model.PropertyChanged -= handler; }

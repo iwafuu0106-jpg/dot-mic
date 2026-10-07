@@ -29,7 +29,7 @@
     },
     {
         "Path":  "README.md",
-        "Hash":  "3E186316336276F6868DBEAFDC1B726E247CD220ECBC6A68D1667C9EECE249AB"
+        "Hash":  "0E4C46F44E1AE9E2D9425269DAC9B0DE6CAFF846BAA1CB6EFD36C0D74E3DAD23"
     },
     {
         "Path":  "WORKLOG.md",
@@ -209,7 +209,7 @@
     },
     {
         "Path":  "App/App.xaml.cs",
-        "Hash":  "827EDB8AF78007E84CD6170C5BC97817939878E48835CB77594EA732C0A9C141"
+        "Hash":  "AB6D5EDDD5C2FC753A2E489D21E83743557AB4DD6312957DD3F77932A2C31D1B"
     },
     {
         "Path":  "App/AudioStatus.cs",
@@ -217,11 +217,11 @@
     },
     {
         "Path":  "App/AudioViewModel.cs",
-        "Hash":  "CB5B568979CF590FC4C106C0E31889811902F63F380ED54C454AE1A850DF4DD0"
+        "Hash":  "65AD1A6F0749AD0301DABA18A1FEF85CDBCE2AC075B87A3BC9B6A5095098E9FF"
     },
     {
         "Path":  "App/CommunityIntegration.cs",
-        "Hash":  "776E977C3D03FF2B9605B0767A631E72DD0CA4D721B64B35DD6680FFA693238E"
+        "Hash":  "0A745187B8A67E1CA7B2CC4DDE595142C20AC0EB4B4DE73E8819FB7595120914"
     },
     {
         "Path":  "App/DotMic.App.csproj",
@@ -233,7 +233,7 @@
     },
     {
         "Path":  "App/Motion.cs",
-        "Hash":  "07E7253EA67860E5FFE327DCA6F89CBD356F0C05101A9ADF5879285DE3173195"
+        "Hash":  "9BD6A7F33F4B3C47B53A88BD9C96C6428D495C0F4194A7D11AC9A50466F03004"
     },
     {
         "Path":  "App/packages.lock.json",
@@ -245,11 +245,11 @@
     },
     {
         "Path":  "App/Settings.cs",
-        "Hash":  "E8BD54599CAF7D12D9A93ED2115A083874CB6A1A52F1CE7C06818B8877A37A65"
+        "Hash":  "BF1A1BD4EBD1CB1D17A81CC8D01B062AC28D85F9306610A047264F338CCEECFC"
     },
     {
         "Path":  "App/Surface.cs",
-        "Hash":  "9AAF70C75BC1C85A2E2A0A3FB79A263516D53628C11BFE9624008845097CBC55"
+        "Hash":  "BCCEFEC9E55BF9BE19FA8FD69AA5DF685C2547584687A2664A27EDFC977DE2D4"
     },
     {
         "Path":  "App/Ui.cs",
@@ -297,7 +297,7 @@
     },
     {
         "Path":  "Community/README.md",
-        "Hash":  "3E186316336276F6868DBEAFDC1B726E247CD220ECBC6A68D1667C9EECE249AB"
+        "Hash":  "44091B4C8C773044B122A4034A0D6180EC80E0F84CC4B244D044256D3DA80C2C"
     },
     {
         "Path":  "Community/reference-clean-pnp.ps1",
@@ -325,11 +325,11 @@
     },
     {
         "Path":  "Community/source-build.ps1",
-        "Hash":  "7D8D60BF519B47A577309861758005A413A022F1B98AE5801469866E3B01351D"
+        "Hash":  "7527C5D86086F200761F8EAEA3C1A2FA02AE92CD5962F7B5CF7D95095D7A01FF"
     },
     {
         "Path":  "Community/SOURCE.md",
-        "Hash":  "CFF9CF9DB19B9115BE80F8C707961D1A56EF2DB26D19C7E722443FFA3E20BF03"
+        "Hash":  "B4665C2F5D26A9F50AD42A4ACB1052932D49955F256CC8ADBCC3D88EB957E94D"
     },
     {
         "Path":  "Community/Setup/ApoPayload.lock.json",
@@ -361,7 +361,7 @@
     },
     {
         "Path":  "Community/Setup/Program.cs",
-        "Hash":  "BA09923E23BDA49F6EE21F5161B5861BE88B3B97F7666CF0BCE3FDBA3EB79783"
+        "Hash":  "2306DF585FD688C4B023AF866EA2068C7F35151BAC18D882A368B6559B9AE0F4"
     },
     {
         "Path":  "Community/Setup/RawRegistry.cs",
@@ -377,11 +377,11 @@
     },
     {
         "Path":  "Community/Setup/SetupForm.cs",
-        "Hash":  "CD5473D942E9CA64531E5FAAD34BC7BBF0A77F2B3D34207E3C9FBC86F2E7D021"
+        "Hash":  "B11634E7431F93C979097828050D9B99020933A46AEAF254A657717FDE32FF43"
     },
     {
         "Path":  "Community/Setup/Transaction.cs",
-        "Hash":  "380E99B7400CD4BAEA7B6E37A3C7B4DCE26976EE1369727D5B59749558C01373"
+        "Hash":  "F48EBA3AD5A269361D833D66D2C3EE992374AF9091717C4D71A492DB0FC99E42"
     },
     {
         "Path":  "docs/apo-community.md",
@@ -638,5 +638,81 @@
     {
         "Path":  "tests/dial/Program.cs",
         "Hash":  "6C873A6A673A7A47AEFA5C04A76A7AA4CE822BBA3FF51066B4C9D19E8572911D"
+    },
+    {
+        "Path":  "App/AppEntryPaths.cs",
+        "Hash":  "B3D2B37F4FDA4FBC409EC733289F3259AA82C5BBDAB8E019AF3977EE6985D534"
+    },
+    {
+        "Path":  "Community/Launchers/CMakeLists.txt",
+        "Hash":  "A48DA09E1B002266A282212AD56AE261033D563C45C4A751D4F476B63EA5B851"
+    },
+    {
+        "Path":  "Community/Launchers/arguments.h",
+        "Hash":  "C63CAF90AB97A8F7FD3BF5C64A2524C65A505E475791460A7538A1728702D5EA"
+    },
+    {
+        "Path":  "Community/Launchers/checks.cpp",
+        "Hash":  "DB18197312675F8EC33AE4E4BABA1DE31BD93196A58629D8736ADBC8888DC38F"
+    },
+    {
+        "Path":  "Community/Launchers/launcher.cpp",
+        "Hash":  "4632C43B3E42C4BC251FFDD610D6170A33C7D9E208CDA0EBD6E41E8B6233F5A4"
+    },
+    {
+        "Path":  "Community/Launchers/launcher.rc.in",
+        "Hash":  "E4AAC81D22ACBDE5DD2225C2FFE0D51C5DB04B76D8F664256E9B6F522DBDC673"
+    },
+    {
+        "Path":  "Community/Setup.Tests/DotMic.Setup.Presentation.Tests.csproj",
+        "Hash":  "43C868514EA9FC026B20C766FAA4F7982A946F52F45E5F0ABF777A1CB168A6FE"
+    },
+    {
+        "Path":  "Community/Setup.Tests/Program.cs",
+        "Hash":  "4816566956CA644D761720F44821B00232764F52DB5CE8210D34C9F6A8EDB95D"
+    },
+    {
+        "Path":  "Community/Setup/SetupDefaults.cs",
+        "Hash":  "600CC5B6D64931A9896C3971684D73AAB0033D6FD8DF1E12436DA4D80AD298BD"
+    },
+    {
+        "Path":  "Community/Setup/SetupPresentation.cs",
+        "Hash":  "C11F54C1AAC9B88D9BB71C3130066DD16D6F8FA7F7A536553208664EF1C56B6D"
+    },
+    {
+        "Path":  "Community/package-ux.ps1",
+        "Hash":  "F982E251C96020CE3B0279522CFC913654196AE8B66EE4157EDE8C14F7AA92E2"
+    },
+    {
+        "Path":  "Community/はじめに.txt",
+        "Hash":  "2C551B19DA1CF2FA6CE03A7AFA292546D626EEC0C5BE6E58DE0A36C36D7F170A"
+    },
+    {
+        "Path":  "RELEASE-NOTES.md",
+        "Hash":  "F8C10BD0251907C7BA1FB954ACA4255370D666C1AAA348A3200B23D896ECEA43"
+    },
+    {
+        "Path":  "SHA256SUMS.txt",
+        "Hash":  "F3F845A45F52990E06A761C6A740FDD380C747B1F9CD23347358FEDE13206EBB"
+    },
+    {
+        "Path":  "docs/assets/dot-mic-main.png",
+        "Hash":  "25473B559F6509A1EB79D009CABD1FF96C451A200B2FF421EC0496F09A382873"
+    },
+    {
+        "Path":  "docs/release-0.4.0-community.md",
+        "Hash":  "BFE1CC4905774C3FE3B6BC99E33963741E188C3A35E10691E049AAE3EBF3AF0F"
+    },
+    {
+        "Path":  "release-record.json",
+        "Hash":  "7BEEBF64A872DF0D02A2047B5D570DF73AFE0CEAD4282CFF8C2E7C9918791D94"
+    },
+    {
+        "Path":  "tests/app-defaults/App.Defaults.Check.csproj",
+        "Hash":  "69769EA7C402F2A709CAD2AA3E6AA2D31F58C6FF451B2EE3F606DCF06939E5A5"
+    },
+    {
+        "Path":  "tests/app-defaults/Program.cs",
+        "Hash":  "F2B4F3785483D2BB34D25F27F93994AF6B51124E7096044A5ACC3455DAEC1BC2"
     }
 ]

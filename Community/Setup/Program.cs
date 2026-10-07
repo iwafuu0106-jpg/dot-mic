@@ -9,14 +9,14 @@ internal static class Program
     {
         if (args.Length == 2 && args[0] == "--fixtures") { ConsentPolicy.Fixtures(Path.GetFullPath(args[1])); return 0; }
         ApplicationConfiguration.Initialize();
-        if (!Environment.Is64BitProcess || !new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator)) { MessageBox.Show("Install / Repair / Uninstall / Recovery診断だけは64bit管理者Setupで実行してください。通常のDOT MIC UIは管理者不要です。"); return 1; }
+        if (!Environment.Is64BitProcess || !new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator)) { MessageBox.Show("導入・修復・削除・復旧には64ビットの管理者権限が必要です。通常のアプリは管理者権限なしで起動してください。", "DOT MIC セットアップ"); return 1; }
         FileStream operation;
         try {
             Transaction.ProtectDirectory(Contract.RecoveryRoot);
             string path = Path.Combine(Contract.RecoveryRoot, "setup-operation.lock");
             if (File.Exists(path)) SecureStorage.RecoveryFile(path);
             operation = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None); SecureStorage.File(path);
-        } catch (Exception e) { MessageBox.Show("Setup transactionを開始できません。別のSetupが実行中の場合は終了してください。\n" + e.Message); return 1; }
+        } catch (Exception e) { MessageBox.Show("処理を開始できません。別のセットアップが開いている場合は閉じてください。\n" + e.Message, "DOT MIC セットアップ"); return 1; }
         using var operationLifetime = operation; // No service, IPC server or background resident component.
         if (args.Length == 3 && args[0] == "--reference-detach-archived-pnp" && args[1] == "--explicit-reference-and-dependent-consent") {
             Transaction? tx = null;

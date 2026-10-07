@@ -1,5 +1,13 @@
 # 0.4.0-communityのRelease構成
 
+## UX更新1
+
+配布識別子／tagは`0.4.0-community-ux1`／`v0.4.0-community-ux1`です。ZIP直下の`セットアップ.exe`と`DOT MIC.exe`から起動します。サインイン時に起動する対象もこの入口です。
+
+新しい導入ではバイパス無効・音量補正0 dB・ゲート無効・ノイズ除去無効に設定します。通常アプリの初回起動時はサインイン起動を有効にし、以後は保存した有効／無効の選択を維持します。モーション設定と常駐設定は廃止しました。閉じるとトレイへ移動し、終了はメニューから行います。アニメーションの有効／無効はWindows設定に従います。
+
+APO／model／推論DLL／native helperは変更せず、導入・復旧データの形式と固定配置先は`0.4.0-community`を維持します。以下は旧Releaseの構成記録です。
+
 ## Version表記
 
 Release識別子は`0.4.0-community`、Git tagは`v0.4.0-community`です。Setup表示の「Community Setup 0.4.0」と`UI/community.json`はこのReleaseを識別します。

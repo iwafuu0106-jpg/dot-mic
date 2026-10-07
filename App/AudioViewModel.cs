@@ -7,13 +7,13 @@ internal sealed class AudioViewModel : INotifyPropertyChanged
 {
     internal Settings Settings { get; }
     internal AudioStatus Status { get; private set; }
-    private string notice = "", integrationActionNotice = "";
+    private string notice = "", integrationActionNotice = "", startupNotice = "";
     private CommunityIntegration.HealthResult integrationHealth = new(CommunityIntegration.HealthKind.Healthy, "");
-    internal string Notice { get => integrationActionNotice.Length > 0 ? integrationActionNotice : integrationHealth.Message.Length > 0 ? integrationHealth.Message : notice; private set => notice = value; }
+    internal string Notice { get => integrationActionNotice.Length > 0 ? integrationActionNotice : integrationHealth.Message.Length > 0 ? integrationHealth.Message : startupNotice.Length > 0 ? startupNotice : notice; private set => notice = value; }
     internal bool IntegrationNeedsRepair => CommunityIntegration.Enabled && integrationHealth.Kind == CommunityIntegration.HealthKind.RepairRequired;
     internal bool IntegrationNeedsSetup => CommunityIntegration.Enabled && integrationHealth.Kind is CommunityIntegration.HealthKind.MissingIntegration or CommunityIntegration.HealthKind.NeedsSelection;
-    internal string InputName { get; private set; } = "マイク (fifine Ampli1)";
-    internal string NcText => Status.ncState switch { 0 => "OFF", 1 => "準備中", 3 => "ON", 4 => "原音へ…", _ => "原音" };
+    internal string InputName { get; private set; } = "マイク";
+    internal string NcText => Status.ncState switch { 0 => "無効", 1 => "準備中", 3 => "有効", 4 => "原音に戻しています", _ => "原音" };
     internal bool Ready { get; private set; }
     internal bool Exiting { get; private set; }
     internal bool Visible { get; private set; }
@@ -37,13 +37,15 @@ internal sealed class AudioViewModel : INotifyPropertyChanged
     internal async Task InitializeAsync()
     {
         if (smoke) return;
+        try { StartupRegistration.Set(Settings.StartOnSignIn); SetStartupNotice(""); SaveNow(); }
+        catch (Exception e) { SetStartupNotice("サインイン時の起動を設定できません：" + e.Message); }
         integrationHealth = await Task.Run(CommunityIntegration.Health); Changed();
         // ShowMain may already have started the first read. Await its completion
         // before deciding that settings are unavailable; do not open a spurious dialog.
         await serial.WaitAsync(); serial.Release(); if (!Ready) await PollAsync(true);
     }
     internal async Task RefreshAsync() { integrationActionNotice = ""; integrationHealth = await Task.Run(CommunityIntegration.Health); await PollAsync(true); Changed(); } // No automatic elevation/retry.
-    internal Task RepairAsync() { try { CommunityIntegration.Repair(); } catch (System.ComponentModel.Win32Exception e) when (e.NativeErrorCode == 1223) { integrationActionNotice = "Setupをキャンセルしました。"; } catch (Exception e) { integrationActionNotice = e.Message; } Changed(); return Task.CompletedTask; }
+    internal Task RepairAsync() { try { CommunityIntegration.Repair(IntegrationNeedsRepair); } catch (System.ComponentModel.Win32Exception e) when (e.NativeErrorCode == 1223) { integrationActionNotice = "セットアップをキャンセルしました。"; } catch (Exception e) { integrationActionNotice = e.Message; } Changed(); return Task.CompletedTask; }
     internal void Update(Action<Settings> update)
     {
         var before = AudioValues(); update(Settings); Settings.Validate(); var after = AudioValues();
@@ -83,12 +85,13 @@ internal sealed class AudioViewModel : INotifyPropertyChanged
                 inputPeak = s.input, outputPeak = s.output, limiterReductionDb = s.limiter > 0 ? -20 * MathF.Log10(s.limiter) : 0,
                 runs = s.runs, wetBlocks = s.adopted / 480, fallbackBlocks = s.fallback / 480, faults = s.faults };
             if (Status.limiterReductionDb >= 1) limiterUntil = Environment.TickCount64 + 300;
-            Notice = Status.ncState == 5 ? "NC: 原音（OFF→ONで再試行）" : ""; Changed();
+            Notice = Status.ncState == 5 ? "ノイズ除去を無効にしてから有効にすると、再試行できます。" : ""; Changed();
         } catch (Exception e) { Ready = false; Status = default; SetNotice($"マイク設定を取得できません: {e.Message}"); }
         finally { polling = false; serial.Release(); }
     }
     internal void SetGain(double gain) => Update(s => s.Gain = Math.Round(Math.Clamp(gain, -12, 36), 1, MidpointRounding.AwayFromZero) + 0d);
     internal void SetNotice(string text) { Notice = text; Changed(); }
+    internal void SetStartupNotice(string text) { startupNotice = text; Changed(); }
     internal void SetVisibility(bool visible)
     {
         Visible = visible && !Suspended; poll.Stop();

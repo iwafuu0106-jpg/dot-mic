@@ -15,13 +15,12 @@ internal sealed class Settings
     public double Hold { get; set; } = 160;
     public double Release { get; set; } = 120;
     public bool Nc { get; set; }
-    public bool MasterBypass { get; set; } = true;
-    public bool Resident { get; set; } = true;
-    public MotionMode Motion { get; set; } = MotionMode.Full;
+    public bool MasterBypass { get; set; }
+    public bool StartOnSignIn { get; set; } = true;
     public void Validate()
     {
         // Version1 legacy JSON routing fields are ignored by System.Text.Json.
-        if (Version != 1 || !Enum.IsDefined(Motion))
+        if (Version != 1)
             throw new InvalidDataException("設定形式が不正です。");
         Check(Gain, -12, 36); Check(Threshold, -80, -10); Check(Hysteresis, 2, 12);
         Check(Attack, 1, 30); Check(Hold, 50, 500); Check(Release, 30, 500);
@@ -40,7 +39,7 @@ internal static class SettingsStore
         if (!File.Exists(FilePath)) return new();
         try { var s = JsonSerializer.Deserialize<Settings>(File.ReadAllText(FilePath)) ?? throw new InvalidDataException(); s.Validate(); return s; }
         catch (Exception e) when (e is IOException or JsonException or InvalidDataException or UnauthorizedAccessException)
-        { warning = "設定を読み込めなかったため初期値を使用しています。マイク設定はCAPXから取得します。"; return new(); }
+        { warning = "保存した設定を読み込めません。初期設定で起動します。"; return new(); }
     }
     internal static void Save(Settings settings)
     {
@@ -60,7 +59,7 @@ internal static class StartupRegistration
 {
     private const string Key = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string Value = "DotMic";
-    internal static string Command => $"\"{Environment.ProcessPath}\" --startup";
+    internal static string Command => $"\"{AppEntryPaths.Application(AppContext.BaseDirectory, Environment.ProcessPath!)}\" --startup";
     internal static bool Enabled { get { using var key = Registry.CurrentUser.OpenSubKey(Key); return string.Equals(key?.GetValue(Value) as string, Command, StringComparison.Ordinal); } }
     internal static void Set(bool enabled)
     {
