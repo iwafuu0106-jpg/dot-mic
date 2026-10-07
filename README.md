@@ -2,7 +2,7 @@
 
 Windows 11向けのマイク音量調整アプリです。Discordなどで使用している入力設定をを変更せず、ゲイン調整やノイズキャンセリングを適用できます。
 
-**[ダウンロード](https://github.com/iwafuu0106-jpg/dot-mic/releases/download/v0.4.1/DOT%20MIC%200.4.1.zip)**
+**[ダウンロード](https://github.com/iwafuu0106-jpg/dot-mic/releases/download/v0.4.1/DOT.MIC.0.4.1.zip)**
 
 Windows 11 x64 / Community Release
 
@@ -67,7 +67,7 @@ Community版はAuthenticode／Microsoft認証版ではないため、Windows Sma
 
 ## 開発者向け・技術情報
 
-- [source ZIP（開発者向け）](https://github.com/iwafuu0106-jpg/dot-mic/releases/download/v0.4.1/DOT%20MIC%200.4.1-source.zip) — 通常利用には不要です。
+- [source ZIP（開発者向け）](https://github.com/iwafuu0106-jpg/dot-mic/releases/download/v0.4.1/DOT.MIC.0.4.1-source.zip) — 通常利用には不要です。
 - [ソースのbuild方法](Community/SOURCE.md)
 - [第三者ライセンス・notice](licenses/README.md)
 - [受入結果の概要](Community/PUBLIC-ACCEPTANCE.md)
