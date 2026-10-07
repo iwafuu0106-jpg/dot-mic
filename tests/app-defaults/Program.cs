@@ -13,3 +13,10 @@ Check(!json.Contains("Motion") && !json.Contains("Resident"), "廃止した設�
 Check(AppEntryPaths.Application("C:/example/UI", "fallback.exe") == "fallback.exe", "旧配置を維持");
 Check(AppEntryPaths.Setup("C:/example/UI").EndsWith("DotMic.Setup.exe"), "旧版の修復先を維持");
 Console.WriteLine("PASS app defaults and legacy JSON only; no startup registration or audio writes.");
+try { AppEntryPaths.InstalledApplication(null); throw new Exception("未導入のダウンロード先を起動登録に使用してしまいます"); } catch (IOException) { }
+var folder = Path.Combine(Path.GetTempPath(), "opencode", "DotMic-entry-check-" + Guid.NewGuid().ToString("N"));
+Directory.CreateDirectory(folder);
+try {
+    File.WriteAllText(Path.Combine(folder, "DOT MIC.exe"), "inert fixture; never executed");
+    Check(AppEntryPaths.InstalledApplication(folder) == Path.Combine(folder, "DOT MIC.exe"), "インストール用配布では導入先を起動登録に使用");
+} finally { File.Delete(Path.Combine(folder, "DOT MIC.exe")); Directory.Delete(folder, false); }

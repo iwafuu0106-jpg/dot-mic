@@ -10,7 +10,11 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
     std::wstring root(module, length);
     root.resize(root.find_last_of(L"\\/"));
 #ifdef DOTMIC_SETUP_LAUNCHER
+#ifdef DOTMIC_INSTALLED_SETUP
+    std::wstring directory = root + L"\\内部ファイル\\UI";
+#else
     std::wstring directory = root + L"\\内部ファイル";
+#endif
     std::wstring executable = directory + L"\\DotMic.Setup.exe";
     const wchar_t* verb = L"runas";
 #else

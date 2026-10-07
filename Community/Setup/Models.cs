@@ -65,6 +65,8 @@ internal sealed class FileEdit
     public bool Existed { get; set; }
     public string? BeforeHash { get; set; }
     public bool Applied { get; set; }
+    public string? StageHash { get; set; }
+    public bool StageStarted { get; set; }
 }
 internal sealed class Receipt
 {
@@ -96,7 +98,22 @@ internal sealed class Receipt
     public bool DependentServiceConsent { get; set; }
     public bool AudioRestartPending { get; set; }
     public string? ArchivedOriginReceipt { get; set; }
+    public ApplicationDeployment? Application { get; set; }
+    public string? ApplicationRemovalJournal { get; set; }
+    public bool ApplicationRemovalPending { get; set; }
 }
 internal sealed record PayloadFile(string Path, string Hash);
-internal sealed record Payload(string Version, string ApoHash, List<PayloadFile> Files);
+internal sealed record Payload(string Version, string ApoHash, List<PayloadFile> Files, List<PayloadFile>? ApplicationEntries = null);
 internal sealed record AudioDependent(string Name, string DisplayName, uint OriginalState);
+internal sealed class ApplicationDeployment
+{
+    public string Root { get; set; } = "";
+    public List<FileEdit> Files { get; set; } = [];
+    public bool DesktopShortcut { get; set; }
+    public string? ShortcutBeforeHash { get; set; }
+    public string? ShortcutHash { get; set; }
+    public bool ShortcutApplied { get; set; }
+    public bool CleanupPending { get; set; }
+}
+internal sealed record InstalledApplication(string Root, List<PayloadFile> Files, string? ShortcutHash, string? PackageRoot = null);
+internal sealed record ApplicationRemoval(InstalledApplication Application, List<RawValue> OwnedConfiguration);

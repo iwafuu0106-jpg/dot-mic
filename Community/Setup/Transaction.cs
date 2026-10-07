@@ -50,6 +50,9 @@ internal sealed class Transaction
         foreach (var edit in receipt.Edits) if (!Scope(edit.Path) && !(edit.Path.Equals(Contract.AudioPath, StringComparison.OrdinalIgnoreCase) && edit.Name == "DisableProtectedAudioDG")) throw new IOException("Snapshotが許可外registry値を指定しています。");
         foreach (var pending in receipt.PendingSecurityRestore) if (!receipt.PendingSecurityOriginal.ContainsKey(pending) || !receipt.PendingSecurityExpected.ContainsKey(pending) || !receipt.AdvancedKeys.Contains(pending, StringComparer.OrdinalIgnoreCase)) throw new IOException("ACL復元記録が不正です。");
         foreach (var file in receipt.Files) { SafePath(Contract.InstallRoot, file.Relative); if (!file.Relative.StartsWith("APO/", StringComparison.Ordinal)) throw new IOException("Snapshot file scopeが不正です。"); }
+        if (receipt.Application != null) ApplicationInstaller.Validate(receipt.Application);
+        if (receipt.ApplicationRemovalJournal != null && !receipt.ApplicationRemovalJournal.Equals(Path.Combine(Path.GetDirectoryName(path)!, "application-removal.json"), StringComparison.OrdinalIgnoreCase))
+            throw new IOException("アプリ削除の復旧記録が保存先の範囲外です。");
         return receipt;
     }
     internal static Payload ValidatePayload(string package)
@@ -144,7 +147,7 @@ internal sealed class Transaction
         }
         foreach (var pair in new[] { ("StableId", target.StableId), ("ContainerId", target.ContainerId), ("PhysicalInterface", target.PhysicalInterface), ("CachedEndpointId", target.EndpointId), ("InstallDir", Contract.InstallRoot), ("ApoPath", SafePath(Contract.InstallRoot, "APO/DotMic.ApoGate.dll")), ("ApoHash", payload.ApoHash), ("OriginReceipt", !string.IsNullOrEmpty(priorOrigin) ? priorOrigin : transaction.ReceiptPath), ("LatestReceipt", transaction.ReceiptPath), ("Version", Contract.Version) }) Add(Contract.ConfigPath, RawValue.Text(pair.Item1, pair.Item2));
         Add(Contract.ConfigPath, RawValue.Text("RequiredFiles", JsonSerializer.Serialize(payload.Files.Where(f => f.Path.StartsWith("APO/", StringComparison.Ordinal)).ToArray(), Contract.Json)));
-        // UI and Setup remain portable, as in0.3.4. Only audiodg payload is installed.
+        // The audiodg payload keeps its accepted fixed location. Application placement is a separate bounded journal.
         foreach (var file in payload.Files.Where(f => f.Path.StartsWith("APO/", StringComparison.Ordinal))) {
             string destination = SafePath(Contract.InstallRoot, file.Path); bool existed = File.Exists(destination);
             for (string? parent = Path.GetDirectoryName(destination); parent != null && parent.Length >= Path.GetFullPath(Contract.InstallRoot).Length; parent = Path.GetDirectoryName(parent)) if (Directory.Exists(parent)) SecureStorage.Validate(parent, true);
@@ -173,6 +176,13 @@ internal sealed class Transaction
             text.AppendLine("追加変更が必要: " + key + " / 現owner: " + owner + "。必要なSetValueまたはCreateSubKeyだけを対象keyへ一時追加し、書込み直後に元owner/ACLへ復元します。親tree全体へFull Controlは付与しません。");
         }
         text.AppendLine("Snapshot: " + ReceiptPath); return text.ToString();
+    }
+    internal void ConfigureApplication(string packagePath, string destination, bool desktopShortcut)
+    {
+        Receipt.Application = ApplicationInstaller.Prepare(this, packagePath, destination, desktopShortcut);
+        foreach (var pair in new[] { ("ApplicationDir", Receipt.Application.Root), ("ApplicationReceipt", ReceiptPath), ("ApplicationPackageDir", packagePath) })
+            Receipt.Edits.Add(new() { Path = Contract.ConfigPath, Name = pair.Item1, Before = RawRegistry.Value(Contract.ConfigPath, pair.Item1), After = RawValue.Text(pair.Item1, pair.Item2) });
+        Save();
     }
     private void Write(Edit edit)
     {
@@ -233,6 +243,7 @@ internal sealed class Transaction
         try {
             ProtectDirectory(Contract.InstallRoot);
             ProtectDirectory(Path.Combine(Contract.InstallRoot, "APO"));
+            ApplicationInstaller.Apply(this, package);
             foreach (var file in Receipt.Files.Where(f => f.BeforeHash != f.Hash)) {
                 string source = SafePath(package, file.Relative), destination = SafePath(Contract.InstallRoot, file.Relative), staged = destination + "." + Receipt.TransactionId + ".stage";
                 ProtectDirectory(Path.GetDirectoryName(destination)!);
@@ -303,9 +314,9 @@ internal sealed class Transaction
         var tx = new Transaction(receipt, directory, "", new(Contract.Version, "", []), false); tx.Save();
         tx.Write(receipt.Edits[0]); receipt.Status = "FixtureApplied"; tx.Save(); return tx;
     }
-    internal async Task Rollback(bool interactive, Func<string, string, bool> restoreConflict, bool keepProtectedAudio)
+    internal async Task Rollback(bool interactive, Func<string, string, bool> restoreConflict, bool keepProtectedAudio, bool restoreApplication = true)
     {
-        try { await RollbackCore(interactive, restoreConflict, keepProtectedAudio); }
+        try { await RollbackCore(interactive, restoreConflict, keepProtectedAudio, restoreApplication: restoreApplication); }
         catch (Exception e) { Receipt.Status = "RecoveryRequired"; Receipt.Diagnostics.Add("Recovery incomplete: " + e); try { Save(); } catch { } throw new IOException("Recovery Required。snapshotと回復情報を保持しました: " + ReceiptPath, e); }
     }
     internal async Task FinishUnloadedRollback()
@@ -334,7 +345,7 @@ internal sealed class Transaction
         foreach (var file in Receipt.Files.Where(f => f.Applied)) { string path = SafePath(Contract.InstallRoot, file.Relative); if (file.Existed ? !File.Exists(path) || Contract.FileHash(path) != file.BeforeHash : File.Exists(path)) throw new IOException("復元済み配置ファイルとの一致を確認できません: " + file.Relative); }
         await Integration.VerifyCaptureOnly(current);
     }
-    private async Task RollbackCore(bool interactive, Func<string, string, bool> restoreConflict, bool keepProtectedAudio, bool restartAudio = true)
+    private async Task RollbackCore(bool interactive, Func<string, string, bool> restoreConflict, bool keepProtectedAudio, bool restartAudio = true, bool restoreApplication = true)
     {
         var current = EndpointIdentity.Resolve(Receipt.Target, Integration.Endpoints());
         string Map(string p) => p.StartsWith(Receipt.Target.FxPath, StringComparison.OrdinalIgnoreCase) ? current.FxPath + p[Receipt.Target.FxPath.Length..] : p;
@@ -396,6 +407,11 @@ internal sealed class Transaction
         } } finally { if (restartAudio) { AudioService.Start(Receipt.AudioRestartConsent, Receipt.AudioDependents, Receipt.DependentServiceConsent); Receipt.AudioRestartPending = false; Save(); } }
         // Restored baseline may contain no APO at all; verify physical capture, not DOT MIC presence.
         await Integration.VerifyCaptureOnly(current);
-        Receipt.Status = "RolledBack"; Save();
+        if (restoreApplication) ApplicationInstaller.Rollback(this, interactive, restoreConflict);
+        else if (Receipt.Application != null) Receipt.Application.CleanupPending = false;
+        if (Receipt.Application?.CleanupPending == true) {
+            Receipt.Status = "ApplicationCleanupPending"; Save(); return;
+        }
+        Receipt.Status = Receipt.ApplicationRemovalPending ? "ApplicationRemovalPending" : "RolledBack"; Save();
     }
 }

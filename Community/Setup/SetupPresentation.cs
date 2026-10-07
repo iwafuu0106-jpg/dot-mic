@@ -12,12 +12,16 @@ internal static class SetupPresentation
     internal static bool ServicesMatch(IReadOnlyList<AudioDependent> expected, IReadOnlyList<AudioDependent> current, bool interruptedRecovery) =>
         (interruptedRecovery || current.Count == expected.Count) && current.All(c => expected.Any(e =>
             e.Name.Equals(c.Name, StringComparison.OrdinalIgnoreCase) && (interruptedRecovery || e.OriginalState == c.OriginalState)));
+    internal static bool CanFinishApplicationCleanup(Receipt receipt) => receipt.Status == "ApplicationCleanupPending" && receipt.Application?.CleanupPending == true
+        && !receipt.AudioRestartPending && !receipt.RegistrationPending && receipt.PendingSecurityRestore.Count == 0;
+    internal static bool CanFinishApplicationRemoval(Receipt receipt) => receipt.Status == "ApplicationRemovalPending" && receipt.ApplicationRemovalPending
+        && receipt.ApplicationRemovalJournal != null && !receipt.AudioRestartPending && !receipt.RegistrationPending && receipt.PendingSecurityRestore.Count == 0;
     internal static string Action(SetupOperation operation) => operation switch {
         SetupOperation.Install => "同意して導入", SetupOperation.Repair => "同意して修復",
         SetupOperation.Remove => "同意して削除", _ => "同意して復旧"
     };
     internal static string Value(RawValue? value) => value == null ? "未設定" : value.Type is 1 or 2 or 7 or 4 ? value.Display : $"種類 {value.Type}、{value.Data.Length} バイト";
-    internal static string Summary(Receipt receipt, SetupOperation operation, IReadOnlyList<PermissionChange> permissions, bool failVerify)
+    internal static string Summary(Receipt receipt, SetupOperation operation, IReadOnlyList<PermissionChange> permissions, bool failVerify, bool removingApplication = false)
     {
         bool restoring = operation is SetupOperation.Remove or SetupOperation.Recover;
         var text = new StringBuilder();
@@ -40,6 +44,7 @@ internal static class SetupPresentation
             foreach (var permission in permissions.DistinctBy(p => (p.Path, p.Owner, p.CreateChild))) text.AppendLine(permission.Path + "\r\n所有者：" + permission.Owner + "／追加：" + (permission.CreateChild ? "設定の作成権限" : "値の書き込み権限"));
         }
         if (failVerify && !restoring) text.AppendLine("診断用：適用確認を一度失敗させ、導入前へ戻します。");
+        if (operation == SetupOperation.Recover && !removingApplication && receipt.Application != null) text.AppendLine("アプリ保存先：" + receipt.Application.Root + "\r\nアプリの配置ファイルとショートカットも導入前に戻します。");
         return text.ToString().TrimEnd();
     }
     internal static string Details(Receipt receipt, string path, string? error)
@@ -55,6 +60,11 @@ internal static class SetupPresentation
             text.AppendLine("導入前：" + Value(edit.Before) + " → 適用後：" + Value(edit.After));
             if (edit.Before != null) text.AppendLine("導入前の種類：" + edit.Before.Type + "／元データ：" + Convert.ToHexString(edit.Before.Data));
             if (edit.After != null) text.AppendLine("適用後の種類：" + edit.After.Type + "／元データ：" + Convert.ToHexString(edit.After.Data));
+        }
+        if (receipt.Application is { } app) {
+            text.AppendLine("アプリ保存先：" + app.Root);
+            text.AppendLine("デスクトップのショートカット：" + (app.DesktopShortcut ? "作成" : "作成しない"));
+            foreach (var file in app.Files) text.AppendLine(file.Relative + "／導入前：" + (file.BeforeHash ?? "未存在") + "／配置後：" + file.Hash);
         }
         if (error != null) text.AppendLine("エラーの詳細：" + error);
         return text.ToString();

@@ -9,5 +9,6 @@
     <Compile Include="../Setup/Models.cs" Link="Models.cs" />
     <Compile Include="../Setup/SetupPresentation.cs" Link="SetupPresentation.cs" />
     <Compile Include="../Setup/SetupDefaults.cs" Link="SetupDefaults.cs" />
+    <Compile Include="../Setup/InstallPaths.cs" Link="InstallPaths.cs" />
   </ItemGroup>
 </Project>

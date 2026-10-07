@@ -36,3 +36,41 @@ Check(parent.Contains("実際の親設定") && parent.Contains("設定の作成�
 Check(SetupDefaults.Controls.Single(p => p.Property == 1).Value == 0, "導入時のバイパスは無効");
 Check(SetupDefaults.Controls.All(p => p.Value == 0) && SetupDefaults.Controls.Length == 4, "音量補正ゼロ・ゲート無効・ノイズ除去無効を維持");
 Console.WriteLine("PASS: Setup表示の確認のみ。レジストリ・音声・サービス操作なし。");
+Check(InstallPaths.Default.StartsWith(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)), "既定のアプリ保存先はProgram Files配下");
+Check(InstallPaths.Normalize(InstallPaths.Default + "\\") == InstallPaths.Default, "保存先の末尾区切りを正規化");
+void RejectPath(string path) { try { InstallPaths.Normalize(path); throw new Exception("危険な保存先を拒否しませんでした"); } catch (IOException) { } }
+foreach (var path in new[] { "relative", @"\\server\share\DOT MIC", Path.GetPathRoot(InstallPaths.Default)!, Contract.InstallRoot,
+    Environment.GetFolderPath(Environment.SpecialFolder.Windows), Contract.RecoveryRoot }) RejectPath(path);
+void RejectFile(string path) {
+    try { InstallPaths.ValidateDeployment(new() { Root = InstallPaths.Default, Files = [new() { Relative = path }] }); throw new Exception("危険な配置ファイルを拒否しませんでした"); }
+    catch (IOException) { }
+}
+foreach (var path in new[] { "APO/DotMic.ApoGate.dll", "内部ファイル/UI/../foreign.exe", "内部ファイル/UI/x:stream", "../DOT MIC.exe", "C:/foreign.exe" }) RejectFile(path);
+InstallPaths.ValidateDeployment(new() { Root = InstallPaths.Default, Files = [new() { Relative = "DOT MIC.exe" }, new() { Relative = "内部ファイル/UI/DotMic.App.exe" }] });
+Check(System.Text.Json.JsonSerializer.Deserialize<Receipt>("{\"Schema\":1,\"Version\":\"0.4.0-community\"}")!.Application == null, "旧復旧データではアプリの配置・削除を追加しない");
+Console.WriteLine("PASS: 保存先とアプリ配置範囲の確認。ファイル配置・ショートカット作成なし。");
+var cleanup = new Receipt { Status = "ApplicationCleanupPending", Application = new() { CleanupPending = true } };
+Check(SetupPresentation.CanFinishApplicationCleanup(cleanup), "検証済みのアプリだけの終了待ちは完了可能");
+cleanup.AudioRestartPending = true;
+Check(!SetupPresentation.CanFinishApplicationCleanup(cleanup), "音声の復旧待ちをアプリ復旧だけで成功にしない");
+cleanup.AudioRestartPending = false; cleanup.RegistrationPending = true;
+Check(!SetupPresentation.CanFinishApplicationCleanup(cleanup), "登録の復旧待ちは完了不可");
+cleanup.RegistrationPending = false; cleanup.PendingSecurityRestore.Add("key");
+Check(!SetupPresentation.CanFinishApplicationCleanup(cleanup), "権限の復旧待ちは完了不可");
+cleanup.PendingSecurityRestore.Clear(); cleanup.Status = "RecoveryRequired";
+Check(!SetupPresentation.CanFinishApplicationCleanup(cleanup), "古いCleanupPendingフラグだけで復旧失敗を隠さない");
+var removal = new Receipt { Status = "ApplicationRemovalPending", ApplicationRemovalPending = true, ApplicationRemovalJournal = "journal" };
+Check(SetupPresentation.CanFinishApplicationRemoval(removal), "音声復旧後の削除終了待ちは完了可能");
+removal.AudioRestartPending = true;
+Check(!SetupPresentation.CanFinishApplicationRemoval(removal), "音声復旧前はアプリ削除を開始しない");
+var installed = new InstalledApplication(InstallPaths.Default, [], null);
+var values = new[] { RawValue.Text("ApplicationDir", InstallPaths.Default), RawValue.Text("ApplicationReceipt", "receipt"), RawValue.Text("ApplicationPackageDir", "package") };
+var edits = InstallPaths.MetadataRemovals(installed, values);
+Check(edits.Count == 3 && edits.All(e => e.Path == Contract.ConfigPath && e.Before == null && e.Applied && e.After != null), "旧導入からの移行も同意済みの復元トランザクションでアプリ設定だけ削除");
+Check(InstallPaths.MetadataRemovals(installed, [RawValue.Text("ApplicationDir", "other")]).Count == 0, "他の保存先の登録は削除しない");
+try { InstallPaths.MetadataRemovals(installed, [RawValue.Text("UnrelatedValue", "keep")]); throw new Exception("許可外アプリ設定を拒否しませんでした"); } catch (IOException) { }
+var recovery = new Receipt { Target = new("", "", "", "マイク", "", ""), Application = new() { Root = InstallPaths.Default } };
+Check(!SetupPresentation.Summary(recovery, SetupOperation.Remove, [], false).Contains("ショートカットも導入前"), "削除でアプリ復元を約束しない");
+Check(SetupPresentation.Summary(recovery, SetupOperation.Recover, [], false).Contains("ショートカットも導入前"), "復旧時のアプリ復元を表示");
+Check(!SetupPresentation.Summary(recovery, SetupOperation.Recover, [], false, removingApplication: true).Contains("ショートカットも導入前"), "中断した削除の再開ではアプリ復元を約束しない");
+Console.WriteLine("PASS: 中断した削除・音声/登録/権限の未復旧・移行用アプリ設定の純粋な状態判定。");

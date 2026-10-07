@@ -44,6 +44,27 @@ internal static class SecureStorage
         security.AddAccessRule(new(new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null), FileSystemRights.ReadAndExecute, AccessControlType.Allow));
         new FileInfo(path).SetAccessControl(security); Validate(path, false);
     }
+    internal static void ValidateParent(string path)
+    {
+        NoRedirection(path);
+        var security = new DirectoryInfo(path).GetAccessControl(AccessControlSections.Owner | AccessControlSections.Access);
+        if (!Trusted(security.GetOwner(typeof(SecurityIdentifier)) as SecurityIdentifier)) throw new IOException("保存先の親フォルダーは管理者管理の場所を指定してください：" + path);
+        const FileSystemRights replace = FileSystemRights.Delete | FileSystemRights.DeleteSubdirectoriesAndFiles | FileSystemRights.ChangePermissions | FileSystemRights.TakeOwnership;
+        foreach (FileSystemAccessRule rule in security.GetAccessRules(true, true, typeof(SecurityIdentifier)))
+            if (rule.AccessControlType == AccessControlType.Allow && (rule.PropagationFlags & PropagationFlags.InheritOnly) == 0
+                && !Trusted(rule.IdentityReference as SecurityIdentifier) && (rule.FileSystemRights & replace) != 0)
+                throw new IOException("一般ユーザーが置き換え可能な親フォルダーには導入できません：" + path);
+    }
+    internal static void CreateApplicationDirectory(string path)
+    {
+        NoRedirection(path);
+        var security = new DirectorySecurity(); security.SetOwner(Administrators); security.SetAccessRuleProtection(true, false);
+        foreach (var sid in new[] { new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null), Administrators })
+            security.AddAccessRule(new(sid, FileSystemRights.FullControl, InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
+        security.AddAccessRule(new(new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null), FileSystemRights.ReadAndExecute,
+            InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
+        new DirectoryInfo(path).Create(security); Validate(path, true);
+    }
     internal static void RecoveryFile(string path)
     {
         path = Path.GetFullPath(path); string root = Path.GetFullPath(Contract.RecoveryRoot);

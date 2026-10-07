@@ -10,6 +10,12 @@ internal static class Program
         if (args.Length == 2 && args[0] == "--fixtures") { ConsentPolicy.Fixtures(Path.GetFullPath(args[1])); return 0; }
         ApplicationConfiguration.Initialize();
         if (!Environment.Is64BitProcess || !new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator)) { MessageBox.Show("導入・修復・削除・復旧には64ビットの管理者権限が必要です。通常のアプリは管理者権限なしで起動してください。", "DOT MIC セットアップ"); return 1; }
+        bool cleanup = args.Length == 3 && args[0] is "--cleanup-application" or "--cleanup-rollback";
+        if (cleanup) {
+            if (!int.TryParse(args[2], out int parent) || parent == Environment.ProcessId) return 1;
+            try { using var process = System.Diagnostics.Process.GetProcessById(parent); if (!process.WaitForExit(60000)) return 1; }
+            catch (ArgumentException) { }
+        }
         FileStream operation;
         try {
             Transaction.ProtectDirectory(Contract.RecoveryRoot);
@@ -18,6 +24,30 @@ internal static class Program
             operation = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None); SecureStorage.File(path);
         } catch (Exception e) { MessageBox.Show("処理を開始できません。別のセットアップが開いている場合は閉じてください。\n" + e.Message, "DOT MIC セットアップ"); return 1; }
         using var operationLifetime = operation; // No service, IPC server or background resident component.
+        if (cleanup) {
+            Transaction? cleanupTransaction = null;
+            try {
+                if (args[0] == "--cleanup-application") {
+                    cleanupTransaction = Transaction.Existing(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(args[1]))!, "snapshot.json"), false);
+                    if (!SetupPresentation.CanFinishApplicationRemoval(cleanupTransaction.Receipt)
+                        || !Path.GetFullPath(args[1]).Equals(cleanupTransaction.Receipt.ApplicationRemovalJournal, StringComparison.OrdinalIgnoreCase))
+                        throw new IOException("音声設定の復旧を完了してから、アプリを削除してください。");
+                    ApplicationInstaller.RemoveOwned(Path.GetFullPath(args[1]));
+                    cleanupTransaction.Receipt.ApplicationRemovalPending = false; cleanupTransaction.Receipt.Status = "RolledBack"; cleanupTransaction.Save();
+                }
+                else { var tx = cleanupTransaction = Transaction.Existing(args[1], false);
+                    if (!SetupPresentation.CanFinishApplicationCleanup(tx.Receipt)) throw new IOException("音声設定・登録・権限の復旧を先に完了してください。");
+                    ApplicationInstaller.Rollback(tx, false, (_, _) => false);
+                    if (tx.Receipt.Application?.CleanupPending == true) throw new IOException("後片付けを完了できません。");
+                    tx.Receipt.Status = "RolledBack"; tx.Save(); }
+                return 0;
+            } catch (Exception e) {
+                if (cleanupTransaction != null) { cleanupTransaction.Receipt.Status = "RecoveryRequired"; try { cleanupTransaction.Save(); } catch { } }
+                MessageBox.Show("アプリの後片付けを完了できませんでした。復旧データは保持しています。\n" + e.Message, "DOT MIC セットアップ"); return 1;
+            }
+        }
+        try { PackageSource.Initialize(); }
+        catch (Exception e) { MessageBox.Show("配布ファイルを確認・準備できませんでした。\n" + e.Message, "DOT MIC セットアップ"); return 1; }
         if (args.Length == 3 && args[0] == "--reference-detach-archived-pnp" && args[1] == "--explicit-reference-and-dependent-consent") {
             Transaction? tx = null;
             try {
