@@ -74,17 +74,20 @@ internal static class ApplicationInstaller
             foreach (var path in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
                 if (!owned.Contains(path)) throw new IOException("保存先にDOT MIC以外のファイルがあります。別の専用フォルダーを選択してください。");
         }
-        var deployment = new ApplicationDeployment { Root = root, DesktopShortcut = desktop };
+        var deployment = new ApplicationDeployment { Root = root, DesktopShortcut = desktop,
+            ParentDirectories = InstallPaths.PlanParents(root, Directory.Exists, File.Exists) };
         foreach (var file in files) Capture(tx, deployment, file.Path, file.Hash, previous);
-        string shortcut = DesktopShortcut.PathName;
-        SecureStorage.NoRedirection(shortcut);
-        if (File.Exists(shortcut)) {
-            string hash = Contract.FileHash(shortcut);
-            if (previous?.ShortcutHash != hash) {
-                if (desktop) throw new IOException("デスクトップに別の「DOT MIC」ショートカットがあります。削除・移動するか、作成のチェックを外してください。");
-            } else {
-                deployment.ShortcutBeforeHash = hash;
-                File.Copy(shortcut, Backup(tx, "desktop-shortcut.lnk"), false); SecureStorage.File(Backup(tx, "desktop-shortcut.lnk"));
+        if (InstallPaths.RequiresShortcutAccess(desktop, previous?.ShortcutHash)) {
+            string shortcut = DesktopShortcut.PathName;
+            SecureStorage.NoRedirection(shortcut);
+            if (File.Exists(shortcut)) {
+                string hash = Contract.FileHash(shortcut);
+                if (previous?.ShortcutHash != hash) {
+                    if (desktop) throw new IOException("デスクトップに別の「DOT MIC」ショートカットがあります。削除・移動するか、作成のチェックを外してください。");
+                } else {
+                    deployment.ShortcutBeforeHash = hash;
+                    File.Copy(shortcut, Backup(tx, "desktop-shortcut.lnk"), false); SecureStorage.File(Backup(tx, "desktop-shortcut.lnk"));
+                }
             }
         }
         if (desktop) {
@@ -120,8 +123,21 @@ internal static class ApplicationInstaller
     {
         if (tx.Receipt.Application is not { } app) return;
         Validate(app); RequireApplicationClosed(app.Root); CheckParents(app.Root);
+        foreach (string parent in app.ParentDirectories) {
+            CheckParents(parent);
+            if (Directory.Exists(parent)) SecureStorage.ValidateParent(parent);
+            else {
+                if (Path.GetDirectoryName(parent) is not string existing || !Directory.Exists(existing)) throw new IOException("確認後に保存先の親フォルダーが変わりました。");
+                SecureStorage.CreateApplicationDirectory(parent);
+            }
+        }
+        var checkedDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (Directory.Exists(app.Root)) { SecureStorage.Validate(app.Root, true); checkedDirectories.Add(app.Root); }
         foreach (var file in app.Files) {
             string destination = Transaction.SafePath(app.Root, file.Relative);
+            for (string? parent = Path.GetDirectoryName(destination); parent != null && InstallPaths.Within(parent, app.Root); parent = Path.GetDirectoryName(parent))
+                if (Directory.Exists(parent) && checkedDirectories.Add(parent)) SecureStorage.Validate(parent, true);
+            if (File.Exists(destination)) SecureStorage.Validate(destination, false);
             if (File.Exists(destination) != file.Existed || (file.Existed && Contract.FileHash(destination) != file.BeforeHash))
                 throw new IOException("確認後に保存先のファイルが変わりました。変更内容を確認し直してください。");
             if (file.BeforeHash == file.Hash) continue;
@@ -141,15 +157,37 @@ internal static class ApplicationInstaller
             string target = DesktopShortcut.PathName;
             string? now = File.Exists(target) ? Contract.FileHash(target) : null;
             if (now != app.ShortcutBeforeHash) throw new IOException("確認後にデスクトップのショートカットが変わりました。");
-            app.ShortcutApplied = true; tx.Save();
-            if (app.DesktopShortcut) File.Copy(Path.Combine(tx.DirectoryPath, "desktop-shortcut.new.lnk"), target, true);
-            else File.Delete(target);
+            if (app.DesktopShortcut) {
+                string source = Path.Combine(tx.DirectoryPath, "desktop-shortcut.new.lnk");
+                string stage = target + ".stage-" + tx.Receipt.TransactionId;
+                RequireFreshStage(stage); app.ShortcutStageStarted = true; tx.Save();
+                StagedFileReplacement.Publish(() => SecureStorage.CopyNewProtectedFile(source, stage), () => Contract.FileHash(stage), app.ShortcutHash!, () => {
+                    if (CurrentHash(target) != now) throw new IOException("配置中にショートカットが変更されました。");
+                    app.ShortcutApplied = true; tx.Save(); File.Move(stage, target, true);
+                });
+                app.ShortcutStageStarted = false; tx.Save();
+            } else { app.ShortcutApplied = true; tx.Save(); File.Delete(target); }
         }
     }
     internal static void Rollback(Transaction tx, bool interactive, Func<string, string, bool> conflict)
     {
         if (tx.Receipt.Application is not { } app) return;
         Validate(app); app.CleanupPending = false;
+        if (app.ShortcutStageStarted) {
+            CleanupReplacementStage(DesktopShortcut.PathName + ".stage-" + tx.Receipt.TransactionId,
+                Path.Combine(tx.DirectoryPath, "desktop-shortcut.new.lnk"), app.ShortcutHash);
+            app.ShortcutStageStarted = false; tx.Save();
+        }
+        if (app.ShortcutRestoreStageStarted) {
+            CleanupReplacementStage(DesktopShortcut.PathName + ".restore-" + tx.Receipt.TransactionId,
+                Backup(tx, "desktop-shortcut.lnk"), app.ShortcutBeforeHash);
+            app.ShortcutRestoreStageStarted = false; tx.Save();
+        }
+        foreach (var file in app.Files.Where(f => f.RestoreStageStarted)) {
+            CleanupReplacementStage(Transaction.SafePath(app.Root, file.Relative) + ".restore-" + tx.Receipt.TransactionId,
+                Backup(tx, file.Relative), file.BeforeHash);
+            file.RestoreStageStarted = false; tx.Save();
+        }
         foreach (var file in app.Files.Where(f => f.StageStarted || f.StageHash != null)) {
             string stage = Transaction.SafePath(app.Root, file.Relative) + ".stage-" + tx.Receipt.TransactionId;
             if (File.Exists(stage)) {
@@ -164,7 +202,16 @@ internal static class ApplicationInstaller
             string path = DesktopShortcut.PathName; string? now = File.Exists(path) ? Contract.FileHash(path) : null;
             if (now != app.ShortcutBeforeHash && (now == app.ShortcutHash || (interactive && conflict(path, "導入前のショートカットに戻しますか？")))) {
                 if (app.ShortcutBeforeHash == null) File.Delete(path);
-                else { string backup = Backup(tx, "desktop-shortcut.lnk"); if (Contract.FileHash(backup) != app.ShortcutBeforeHash) throw new IOException("ショートカットの復元用コピーが一致しません。"); File.Copy(backup, path, true); }
+                else {
+                    string backup = Backup(tx, "desktop-shortcut.lnk"); if (Contract.FileHash(backup) != app.ShortcutBeforeHash) throw new IOException("ショートカットの復元用コピーが一致しません。");
+                    string stage = path + ".restore-" + tx.Receipt.TransactionId;
+                    RequireFreshStage(stage); app.ShortcutRestoreStageStarted = true; tx.Save();
+                    StagedFileReplacement.Publish(() => SecureStorage.CopyNewProtectedFile(backup, stage), () => Contract.FileHash(stage), app.ShortcutBeforeHash, () => {
+                        if (CurrentHash(path) != now) throw new IOException("復元中にショートカットが変更されました。");
+                        File.Move(stage, path, true);
+                    });
+                    app.ShortcutRestoreStageStarted = false; tx.Save();
+                }
             } else if (now != app.ShortcutBeforeHash && !interactive) throw new IOException("ショートカットが別の状態へ変更されています。");
             app.ShortcutApplied = false; tx.Save();
         }
@@ -180,11 +227,33 @@ internal static class ApplicationInstaller
             }
             if (file.Existed) {
                 string backup = Backup(tx, file.Relative); if (Contract.FileHash(backup) != file.BeforeHash) throw new IOException("アプリの復元用コピーが一致しません。");
-                File.Copy(backup, path, true); SecureStorage.File(path);
+                CreateDirectory(Path.GetDirectoryName(path)!, app.Root);
+                string stage = path + ".restore-" + tx.Receipt.TransactionId;
+                RequireFreshStage(stage); file.RestoreStageStarted = true; tx.Save();
+                StagedFileReplacement.Publish(() => SecureStorage.CopyNewProtectedFile(backup, stage), () => Contract.FileHash(stage), file.BeforeHash!, () => {
+                    if (CurrentHash(path) != now) throw new IOException("復元中にアプリファイルが変更されました。");
+                    File.Move(stage, path, true);
+                });
+                file.RestoreStageStarted = false; tx.Save();
             } else File.Delete(path);
             file.Applied = false; tx.Save();
         }
         RemoveEmptyOwnedDirectories(app.Root, app.Files.Select(f => f.Relative));
+    }
+    private static string? CurrentHash(string path) => File.Exists(path) ? Contract.FileHash(path) : null;
+    private static void RequireFreshStage(string stage)
+    {
+        SecureStorage.NoRedirection(stage);
+        if (File.Exists(stage) || Directory.Exists(stage)) throw new IOException("配置・復元用ファイルが残っています。復旧を完了してください。");
+    }
+    private static void CleanupReplacementStage(string stage, string source, string? expectedHash)
+    {
+        if (!File.Exists(stage)) return;
+        SecureStorage.Validate(stage, false); SecureStorage.Validate(source, false);
+        if (expectedHash == null || Contract.FileHash(source) != expectedHash) throw new IOException("配置・復元用コピーの元データが一致しません。");
+        using (var staged = File.OpenRead(stage)) using (var original = File.OpenRead(source))
+            if (!StagedFileReplacement.PrefixMatches(staged, original)) throw new IOException("配置・復元用ファイルが別の内容へ変更されています。復旧データを保持します。");
+        File.Delete(stage);
     }
     private static bool ContainsData(string directory)
     {
@@ -290,8 +359,10 @@ internal static class ApplicationInstaller
             string target = Transaction.SafePath(installed.Root, file.Path);
             if (File.Exists(target) && Contract.FileHash(target) == file.Hash) { SecureStorage.Validate(target, false); File.Delete(target); }
         }
-        string shortcut = DesktopShortcut.PathName;
-        if (installed.ShortcutHash != null && File.Exists(shortcut) && Contract.FileHash(shortcut) == installed.ShortcutHash) { SecureStorage.NoRedirection(shortcut); File.Delete(shortcut); }
+        if (installed.ShortcutHash != null) {
+            string shortcut = DesktopShortcut.PathName;
+            if (File.Exists(shortcut) && Contract.FileHash(shortcut) == installed.ShortcutHash) { SecureStorage.NoRedirection(shortcut); File.Delete(shortcut); }
+        }
         if (File.Exists(marker)) {
             var current = JsonSerializer.Deserialize<InstalledApplication>(File.ReadAllBytes(marker), Contract.Json);
             if (current?.Root == installed.Root && current.Files.SequenceEqual(installed.Files) && current.ShortcutHash == installed.ShortcutHash) { SecureStorage.Validate(marker, false); File.Delete(marker); }

@@ -1,4 +1,4 @@
-﻿param([Parameter(Mandatory=$true)][string]$BaseDirectory,[string]$OutputDirectory='artifacts/install-0.4.1')
+﻿param([Parameter(Mandatory=$true)][string]$BaseDirectory,[string]$OutputDirectory='artifacts/install-0.4.2')
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot
 Push-Location $root
@@ -31,8 +31,8 @@ try {
  Copy-Item Community/SECURITY.md "$payload/SECURITY.md"
  Copy-Item "$base/DotMic.Integration.dll" $payload
  Copy-Item "$base/UI/DotMic.Integration.dll","$base/UI/DotMic.ApoSettings.dll" "$payload/UI"
- '{"Version":"0.4.0-community","Distribution":"0.4.1","Integration":"legacy","PaidSigningRequired":false}' | Set-Content "$payload/UI/community.json" -Encoding UTF8
- '{"Version":"0.4.1","BackendContract":"0.4.0-community"}' | Set-Content "$payload/UI/installation-package.json" -Encoding UTF8
+ '{"Version":"0.4.0-community","Distribution":"0.4.2","Integration":"legacy","PaidSigningRequired":false}' | Set-Content "$payload/UI/community.json" -Encoding UTF8
+ '{"Version":"0.4.2","BackendContract":"0.4.0-community"}' | Set-Content "$payload/UI/installation-package.json" -Encoding UTF8
  $cmake=Get-Command cmake -ErrorAction SilentlyContinue
  $exe=if($cmake){$cmake.Source}else{Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/2019/BuildTools/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe'}
  Native {& $exe -S Community/Launchers -B "$output/launchers" -G 'Visual Studio 16 2019' -A x64 '-DCMAKE_SYSTEM_VERSION=10.0.19041.0' '-DDOTMIC_INSTALLED_SETUP=ON'}
@@ -48,8 +48,8 @@ try {
  Copy-Item "$output/launchers/Release/DOT MIC.exe","$output/launchers/Release/セットアップ.exe" $distribution
  Copy-Item $payload "$distribution/内部ファイル" -Recurse
  Copy-Item Community/インストール.txt "$distribution/インストール.txt"
- $zip=Join-Path $output 'DOT MIC 0.4.1.zip'
+ $zip=Join-Path $output 'DOT MIC 0.4.2.zip'
  [IO.Compression.ZipFile]::CreateFromDirectory($distribution,$zip,[IO.Compression.CompressionLevel]::Optimal,$false)
- [pscustomobject]@{Version='0.4.1';ZipName=[IO.Path]::GetFileName($zip);ZipBytes=(Get-Item $zip).Length;ZipFiles=(Get-ChildItem $distribution -File -Recurse).Count;ZipSha256=(Get-FileHash $zip).Hash;PayloadFiles=$files.Count;SingleExecutableBundle=$false;ProtectedAudioPayloadUnchanged=$true;BackendContract='0.4.0-community';DefaultApplicationDirectory='Program Files/DOT MIC/Application';ActualInstallationPerformed=$false} | ConvertTo-Json | Set-Content "$output/package-result.json" -Encoding UTF8
+ [pscustomobject]@{Version='0.4.2';ZipName=[IO.Path]::GetFileName($zip);ZipBytes=(Get-Item $zip).Length;ZipFiles=(Get-ChildItem $distribution -File -Recurse).Count;ZipSha256=(Get-FileHash $zip).Hash;PayloadFiles=$files.Count;SingleExecutableBundle=$false;ProtectedAudioPayloadUnchanged=$true;BackendContract='0.4.0-community';DefaultApplicationDirectory='Program Files/DOT MIC/Application';ActualInstallationPerformed=$false} | ConvertTo-Json | Set-Content "$output/package-result.json" -Encoding UTF8
  Get-Content "$output/package-result.json" -Raw -Encoding UTF8
 }finally{Pop-Location}

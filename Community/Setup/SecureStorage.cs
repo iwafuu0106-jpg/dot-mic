@@ -39,10 +39,23 @@ internal static class SecureStorage
     internal static void File(string path)
     {
         NoRedirection(path);
+        new FileInfo(path).SetAccessControl(FilePolicy()); Validate(path, false);
+    }
+    private static FileSecurity FilePolicy()
+    {
         var security = new FileSecurity(); security.SetOwner(Administrators); security.SetAccessRuleProtection(true, false);
         foreach (var sid in new[] { new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null), Administrators }) security.AddAccessRule(new(sid, FileSystemRights.FullControl, AccessControlType.Allow));
         security.AddAccessRule(new(new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null), FileSystemRights.ReadAndExecute, AccessControlType.Allow));
-        new FileInfo(path).SetAccessControl(security); Validate(path, false);
+        return security;
+    }
+    internal static void CopyNewProtectedFile(string source, string path)
+    {
+        NoRedirection(source); NoRedirection(path);
+        using var input = System.IO.File.OpenRead(source);
+        // Apply protection at creation, including stages on the public desktop.
+        // Never open or truncate a pre-existing file at the stage path.
+        using var output = new FileInfo(path).Create(FileMode.CreateNew, FileSystemRights.Write, FileShare.None, 65536, FileOptions.WriteThrough, FilePolicy());
+        input.CopyTo(output); output.Flush(true);
     }
     internal static void ValidateParent(string path)
     {

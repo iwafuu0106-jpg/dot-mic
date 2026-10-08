@@ -9,6 +9,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../Setup/*.cs" Exclude="../Setup/Program.cs" Link="Setup/%(Filename)%(Extension)" />
+    <Compile Include="../../Shared/NativeTextBuffer.cs" Link="NativeTextBuffer.cs" />
+    <Compile Include="../../Shared/FailurePreservation.cs" Link="FailurePreservation.cs" />
     <EmbeddedResource Include="../Setup/ApoPayload.lock.json" LogicalName="DotMic.Setup.ApoPayload.lock.json" />
   </ItemGroup>
 </Project>

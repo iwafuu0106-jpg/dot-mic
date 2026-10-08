@@ -29,9 +29,16 @@ internal sealed record EndpointIdentity(string EndpointId, string StableId, stri
         bool SameContainer(EndpointIdentity e) => string.IsNullOrEmpty(prior.ContainerId) || string.Equals(e.ContainerId, prior.ContainerId, StringComparison.OrdinalIgnoreCase);
         var matches = !string.IsNullOrEmpty(prior.StableId) ? all.Where(e => e.StableId == prior.StableId && SameContainer(e)).ToArray() : [];
         if (matches.Length == 0 && !string.IsNullOrEmpty(prior.ContainerId) && !string.IsNullOrEmpty(prior.PhysicalInterface)) matches = all.Where(e => SameContainer(e) && string.Equals(e.PhysicalInterface, prior.PhysicalInterface, StringComparison.OrdinalIgnoreCase)).ToArray();
+        if (matches.Length == 0 && (!string.IsNullOrEmpty(prior.StableId)
+            || !string.IsNullOrEmpty(prior.ContainerId) && !string.IsNullOrEmpty(prior.PhysicalInterface)))
+            throw new EndpointUnavailableException();
         if (matches.Length != 1) throw new InvalidOperationException("対象マイクを一意に特定できません。マイクを再選択してください。");
         return matches[0];
     }
+}
+internal sealed class EndpointUnavailableException : InvalidOperationException
+{
+    internal EndpointUnavailableException() : base("対象マイクがまだ利用できません。接続を確認してください。") { }
 }
 internal sealed record RawValue(string Name, uint Type, byte[] Data)
 {
@@ -67,6 +74,7 @@ internal sealed class FileEdit
     public bool Applied { get; set; }
     public string? StageHash { get; set; }
     public bool StageStarted { get; set; }
+    public bool RestoreStageStarted { get; set; }
 }
 internal sealed class Receipt
 {
@@ -109,10 +117,13 @@ internal sealed class ApplicationDeployment
 {
     public string Root { get; set; } = "";
     public List<FileEdit> Files { get; set; } = [];
+    public List<string> ParentDirectories { get; set; } = [];
     public bool DesktopShortcut { get; set; }
     public string? ShortcutBeforeHash { get; set; }
     public string? ShortcutHash { get; set; }
     public bool ShortcutApplied { get; set; }
+    public bool ShortcutStageStarted { get; set; }
+    public bool ShortcutRestoreStageStarted { get; set; }
     public bool CleanupPending { get; set; }
 }
 internal sealed record InstalledApplication(string Root, List<PayloadFile> Files, string? ShortcutHash, string? PackageRoot = null);

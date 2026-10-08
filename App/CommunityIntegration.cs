@@ -25,10 +25,7 @@ internal static class CommunityIntegration
             using var config = hklm.OpenSubKey(Config, false);
             if (config == null) return new(HealthKind.MissingIntegration, "未導入です。セットアップでマイクを選択して導入してください。");
             string stable = config.GetValue("StableId") as string ?? "", container = config.GetValue("ContainerId") as string ?? "", physical = config.GetValue("PhysicalInterface") as string ?? "";
-            int hr = dm_community_endpoints(null, 0, out uint required); if (hr != unchecked((int)0x8007007A)) Marshal.ThrowExceptionForHR(hr);
-            if (required is 0 or > 1024 * 1024) return new(HealthKind.Unknown, "マイク統合の状態を取得できません。");
-            var buffer = new StringBuilder((int)required); Marshal.ThrowExceptionForHR(dm_community_endpoints(buffer, required, out _));
-            var all = JsonSerializer.Deserialize<Endpoint[]>(buffer.ToString()) ?? [];
+            var all = JsonSerializer.Deserialize<Endpoint[]>(DotMic.Common.NativeTextBuffer.Read(dm_community_endpoints)) ?? [];
             var matches = all.Where(e => e.StableId == stable && stable.Length > 0 && (container.Length == 0 || e.ContainerId.Equals(container, StringComparison.OrdinalIgnoreCase))).ToArray();
             if (matches.Length == 0 && container.Length > 0 && physical.Length > 0) matches = all.Where(e => e.ContainerId.Equals(container, StringComparison.OrdinalIgnoreCase) && e.PhysicalInterface.Equals(physical, StringComparison.OrdinalIgnoreCase)).ToArray();
             if (matches.Length != 1) return new(HealthKind.NeedsSelection, "マイクを特定できません。接続とセットアップで選んだマイクを確認してください。");

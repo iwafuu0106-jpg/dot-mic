@@ -98,19 +98,37 @@ internal static class RawRegistry
     }
     internal static bool SecurityRecognized(KeyImage original, byte[] expected)
     {
-        var current = KeyOnly(original.Path); var sd = new RawSecurityDescriptor(original.Security, 0); var temporary = new RawSecurityDescriptor(expected, 0);
-        string actual = new RawSecurityDescriptor(current.Security, 0).GetSddlForm(AccessControlSections.All);
-        if (actual == sd.GetSddlForm(AccessControlSections.All) || actual == temporary.GetSddlForm(AccessControlSections.All)) return true;
-        sd.Owner = temporary.Owner; return actual == sd.GetSddlForm(AccessControlSections.All);
+        var current = KeyOnly(original.Path);
+        return current.Exists && SecurityRecognized(original, expected, current.Security);
     }
-    internal static void RestoreSecurity(KeyImage original)
+    private static bool SecurityRecognized(KeyImage original, byte[] expected, byte[] actual)
     {
-        Privilege("SeRestorePrivilege"); var sd = new RawSecurityDescriptor(original.Security, 0);
+        if (SecurityDescriptorPolicy.SamePermissions(original.Security, actual) || SecurityDescriptorPolicy.SamePermissions(expected, actual)) return true;
+        var sd = new RawSecurityDescriptor(original.Security, 0); sd.Owner = new RawSecurityDescriptor(expected, 0).Owner;
+        return SecurityDescriptorPolicy.SamePermissions(Binary(sd), actual);
+    }
+    internal static void RestoreSecurity(KeyImage original, byte[]? expected = null, Func<bool>? restoreConflict = null)
+    {
+        if (!original.Exists || original.SecurityMask != 15 || original.Security.Length == 0) throw new IOException("完全な権限復元記録がありません。");
+        var sd = new RawSecurityDescriptor(original.Security, 0);
+        using var existing = Open(original.Path, Read | 0x01000000)!;
+        byte[] observed = Security(existing.Handle, 15);
+        if (SecurityDescriptorPolicy.SamePermissions(original.Security, observed)) return;
+        if (expected != null && !SecurityRecognized(original, expected, observed) && !(restoreConflict?.Invoke() ?? false)) throw new IOException("ACL復旧の確認が必要です: " + original.Path);
+        Privilege("SeBackupPrivilege"); Privilege("SeRestorePrivilege");
+        // An empty subkey reopens the already-held, existing key. It cannot create
+        // missing named keys, switch to a replacement path, or grant parent access.
+        // REG_OPTION_BACKUP_RESTORE is required for restoring a protected DACL;
+        // merely enabling SeRestorePrivilege does not fix normal RegOpenKeyEx.
+        Check(RegCreateKeyEx(existing.Handle, "", 0, null, 4, 0, 0, out var handle, out uint disposition), "Open existing key for ACL restore " + original.Path);
+        using var key = new Key(handle);
+        if (disposition != 2) throw new IOException("既存の権限復元対象を開けませんでした。");
+        // Keep the same key held across the decision and privileged reopen; do
+        // not overwrite ACL changes made while the user was deciding.
+        if (!SecurityDescriptorPolicy.SamePermissions(observed, Security(key.Handle, 15))) throw new IOException("確認後にregistry securityが変わりました: " + original.Path);
         uint mask = 7 | ((sd.ControlFlags & ControlFlags.DiscretionaryAclProtected) != 0 ? 0x80000000u : 0x20000000u);
-        SetSecurity(original.Path, WriteOwner | WriteDac, mask, original.Security);
-        using var key = Open(original.Path, Read | 0x01000000)!;
-        var actual = new RawSecurityDescriptor(Security(key.Handle, 15), 0);
-        if (actual.GetSddlForm(AccessControlSections.All) != sd.GetSddlForm(AccessControlSections.All)) throw new IOException("ACL/ownerの復元read-backに失敗: " + original.Path);
+        Check(RegSetKeySecurity(key.Handle, mask, original.Security), "Security restore " + original.Path);
+        if (!SecurityDescriptorPolicy.SamePermissions(original.Security, Security(key.Handle, 15))) throw new IOException("ACL/ownerの復元read-backに失敗: " + original.Path);
     }
     internal static void Write(Edit edit, List<KeyImage> snapshots, bool advanced, List<string> advancedKeys, List<string> pendingSecurity, Dictionary<string, byte[]> pendingExpected, Dictionary<string, byte[]> pendingOriginal, Action journal)
     {
@@ -126,7 +144,7 @@ internal static class RawRegistry
             if (!CanWrite(parent, !leafExists)) {
                 if (!advanced) throw new UnauthorizedAccessException("追加変更への同意が必要: " + parent);
                 var image = snapshots.FirstOrDefault(k => k.Exists && string.Equals(k.Path, parent, StringComparison.OrdinalIgnoreCase)) ?? throw new IOException("Permission復元用snapshotがありません: " + parent);
-                if (!KeyOnly(parent).Security.AsSpan().SequenceEqual(image.Security)) throw new IOException("一時permission変更の直前にsecurityが変わりました: " + parent);
+                if (!SecurityDescriptorPolicy.SamePermissions(image.Security, KeyOnly(parent).Security)) throw new IOException("一時permission変更の直前にsecurityが変わりました: " + parent);
                 if (!advancedKeys.Contains(parent, StringComparer.OrdinalIgnoreCase)) { advancedKeys.Add(parent); journal(); }
                 byte[] expected = PermissionDescriptor(image, leafExists ? Set : Create);
                 pendingExpected[parent] = expected;
@@ -141,7 +159,7 @@ internal static class RawRegistry
             if (edit.After == null) { int e = RegDeleteValue(h, edit.Name); if (e != Missing) Check(e, path); }
             else Check(RegSetValueEx(h, edit.Name, 0, edit.After.Type, edit.After.Data, (uint)edit.After.Data.Length), path);
             var actual = Value(path, edit.Name); if (edit.After == null ? actual != null : !edit.After.Same(actual)) throw new IOException("Registry read-back differs: " + path + " / " + edit.Name);
-        } finally { foreach (var image in restore.AsEnumerable().Reverse()) { RestoreSecurity(image); pendingSecurity.RemoveAll(p => p.Equals(image.Path, StringComparison.OrdinalIgnoreCase)); pendingExpected.Remove(image.Path); pendingOriginal.Remove(image.Path); journal(); } }
+        } finally { foreach (var image in restore.AsEnumerable().Reverse()) { RestoreSecurity(image, pendingExpected[image.Path]); pendingSecurity.RemoveAll(p => p.Equals(image.Path, StringComparison.OrdinalIgnoreCase)); pendingExpected.Remove(image.Path); pendingOriginal.Remove(image.Path); journal(); } }
     }
     internal static void DeleteEmpty(string path) { int e = RegDeleteKeyEx(Hklm, path, View64, 0); if (e != Missing) Check(e, "Delete owned empty key " + path); }
 }

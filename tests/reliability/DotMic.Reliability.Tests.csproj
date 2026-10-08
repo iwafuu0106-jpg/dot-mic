@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Shared/NativeTextBuffer.cs" Link="NativeTextBuffer.cs" />
+    <Compile Include="../../Shared/FailurePreservation.cs" Link="FailurePreservation.cs" />
+    <Compile Include="../../Community/Setup/ServiceTransition.cs" Link="ServiceTransition.cs" />
+    <Compile Include="../../Community/Setup/Models.cs" Link="Models.cs" />
+    <Compile Include="../../Community/Setup/AudioReadiness.cs" Link="AudioReadiness.cs" />
+    <Compile Include="../../Community/Setup/StagedFileReplacement.cs" Link="StagedFileReplacement.cs" />
+    <Compile Include="../../App/PendingAudioWrites.cs" Link="PendingAudioWrites.cs" />
+    <Compile Include="../../App/StartupOptions.cs" Link="StartupOptions.cs" />
+  </ItemGroup>
+</Project>

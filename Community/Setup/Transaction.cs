@@ -32,10 +32,14 @@ internal sealed class Transaction
         string baseline = Path.Combine(DirectoryPath, "snapshot-base.json");
         if (!File.Exists(baseline)) Atomic(baseline, JsonSerializer.SerializeToUtf8Bytes(new Envelope(Contract.Hash(bytes), bytes), Contract.Json));
         Atomic(ReceiptPath, JsonSerializer.SerializeToUtf8Bytes(new Envelope(Contract.Hash(bytes), bytes), Contract.Json));
-        var verify = Read(ReceiptPath); if (verify.TransactionId != Receipt.TransactionId) throw new IOException("Snapshotのatomic保存・整合性確認に失敗しました。");
+        // Verify our own write, checksum, protected storage and record scope. Filesystem
+        // paths are checked at each deployment use and fully on external recovery reads;
+        // walking the entire app tree at every per-file save makes deployment quadratic.
+        var verify = ReadStored(ReceiptPath, false); if (verify.TransactionId != Receipt.TransactionId) throw new IOException("Snapshotのatomic保存・整合性確認に失敗しました。");
     }
     private sealed record Envelope(string Sha256, byte[] Data);
-    internal static Receipt Read(string path)
+    internal static Receipt Read(string path) => ReadStored(path, true);
+    private static Receipt ReadStored(string path, bool inspectApplicationPaths)
     {
         path = Path.GetFullPath(path);
         if (!path.StartsWith(Path.GetFullPath(Contract.RecoveryRoot) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) || Path.GetFileName(path) != "snapshot.json") throw new IOException("管理者管理のRecovery snapshotを選択してください。");
@@ -50,7 +54,10 @@ internal sealed class Transaction
         foreach (var edit in receipt.Edits) if (!Scope(edit.Path) && !(edit.Path.Equals(Contract.AudioPath, StringComparison.OrdinalIgnoreCase) && edit.Name == "DisableProtectedAudioDG")) throw new IOException("Snapshotが許可外registry値を指定しています。");
         foreach (var pending in receipt.PendingSecurityRestore) if (!receipt.PendingSecurityOriginal.ContainsKey(pending) || !receipt.PendingSecurityExpected.ContainsKey(pending) || !receipt.AdvancedKeys.Contains(pending, StringComparer.OrdinalIgnoreCase)) throw new IOException("ACL復元記録が不正です。");
         foreach (var file in receipt.Files) { SafePath(Contract.InstallRoot, file.Relative); if (!file.Relative.StartsWith("APO/", StringComparison.Ordinal)) throw new IOException("Snapshot file scopeが不正です。"); }
-        if (receipt.Application != null) ApplicationInstaller.Validate(receipt.Application);
+        if (receipt.Application != null) {
+            if (inspectApplicationPaths) ApplicationInstaller.Validate(receipt.Application);
+            else InstallPaths.ValidateDeployment(receipt.Application);
+        }
         if (receipt.ApplicationRemovalJournal != null && !receipt.ApplicationRemovalJournal.Equals(Path.Combine(Path.GetDirectoryName(path)!, "application-removal.json"), StringComparison.OrdinalIgnoreCase))
             throw new IOException("アプリ削除の復旧記録が保存先の範囲外です。");
         return receipt;
@@ -273,7 +280,7 @@ internal sealed class Transaction
                 Integration.Set(Receipt.Target.EndpointId, pair.Item1, pair.Item2); if (!edit.After.Same(RawRegistry.Value(path, name)) || RawRegistry.Value(drag.Path, name) != null) throw new IOException("CAPX safe User/Volatile commit read-back failed"); Save();
             }
             Receipt.Status = "AudioRestart"; Receipt.AudioRestartPending = true; Save(); AudioService.Restart(Receipt.AudioRestartConsent, Receipt.AudioDependents, Receipt.DependentServiceConsent); Receipt.AudioRestartPending = false; Save();
-            var current = EndpointIdentity.Resolve(Receipt.Target, Integration.Endpoints()); Receipt.Diagnostics.Add("After restart: " + JsonSerializer.Serialize(current));
+            var current = await Integration.ResolveReady(Receipt.Target); Receipt.Diagnostics.Add("After restart: " + JsonSerializer.Serialize(current));
             Receipt.Status = "Verifying"; Save();
             if (failVerification) throw new IOException("診断用の一度だけの人工Verify失敗。");
             await Integration.Verify(current, SafePath(Contract.InstallRoot, "APO/DotMic.ApoGate.dll"), payload.ApoHash);
@@ -347,7 +354,7 @@ internal sealed class Transaction
     }
     private async Task RollbackCore(bool interactive, Func<string, string, bool> restoreConflict, bool keepProtectedAudio, bool restartAudio = true, bool restoreApplication = true)
     {
-        var current = EndpointIdentity.Resolve(Receipt.Target, Integration.Endpoints());
+        var current = await Integration.ResolveReady(Receipt.Target);
         string Map(string p) => p.StartsWith(Receipt.Target.FxPath, StringComparison.OrdinalIgnoreCase) ? current.FxPath + p[Receipt.Target.FxPath.Length..] : p;
         foreach (var path in Receipt.PendingSecurityRestore.ToArray()) {
             if (!Receipt.PendingSecurityOriginal.TryGetValue(path, out var original)) throw new IOException("保留ACL復元のsnapshotがありません: " + path);
@@ -357,8 +364,8 @@ internal sealed class Transaction
             bool originalScope = Receipt.Keys.Any(k => k.Path.Equals(path, StringComparison.OrdinalIgnoreCase)) || path.Equals(current.FxPath, StringComparison.OrdinalIgnoreCase) || path.StartsWith(current.FxPath + "\\", StringComparison.OrdinalIgnoreCase);
             if (!originalScope) throw new IOException("ACL復旧対象が記録された変更対象と一致しません。");
             if (!Receipt.PendingSecurityExpected.TryGetValue(path, out var expected)) throw new IOException("保留ACLの予定descriptorがありません: " + path);
-            if (!RawRegistry.SecurityRecognized(mapped, expected) && (!interactive || !restoreConflict(mapped.Path, "一時ACL変更後のsecurityが予定状態と異なります。保存した導入前owner/ACLへ強制復元しますか？"))) throw new IOException("ACL復旧の確認が必要です: " + path);
-            RawRegistry.RestoreSecurity(mapped); Receipt.PendingSecurityRestore.Remove(path); Receipt.PendingSecurityExpected.Remove(path); Receipt.PendingSecurityOriginal.Remove(path); Save();
+            RawRegistry.RestoreSecurity(mapped, expected, () => interactive && restoreConflict(mapped.Path, "一時ACL変更後のsecurityが予定状態と異なります。保存した導入前owner/ACLへ強制復元しますか？"));
+            Receipt.PendingSecurityRestore.Remove(path); Receipt.PendingSecurityExpected.Remove(path); Receipt.PendingSecurityOriginal.Remove(path); Save();
         }
         if (Receipt.RegistrationPending) {
             // A process interruption cannot establish ownership of the API's partial
@@ -383,10 +390,9 @@ internal sealed class Transaction
             if (!matches && (!interactive || !restoreConflict(path + " / " + edit.Name, $"現在: {now?.Display ?? "未存在"}\nDOT MIC適用時: {edit.After?.Display ?? "未存在"}\n導入前: {edit.Before?.Display ?? "未存在"}"))) { if (!interactive) throw new IOException("Rollback対象値が別の状態へ変更されています: " + path); Receipt.Diagnostics.Add("User retained conflicting value: " + path + " / " + edit.Name); continue; }
             RawRegistry.Write(new() { Path = path, Name = edit.Name, Before = now, After = edit.Before }, keys, AdvancedPermissionApproved, Receipt.AdvancedKeys, Receipt.PendingSecurityRestore, Receipt.PendingSecurityExpected, Receipt.PendingSecurityOriginal, Save);
         }
-        foreach (var key in Receipt.Keys.Where(k => !k.Exists && Receipt.Operation != "ReferenceMigrationDetach").OrderByDescending(k => k.Path.Length)) {
-            string path = Map(key.Path); var image = RawRegistry.Tree(path).First();
-            if (image.Exists && image.Values.Count == 0 && RawRegistry.Tree(path).Count == 1) RawRegistry.DeleteEmpty(path);
-        }
+        // Retain empty key shells, as reference migration does. RegDeleteKeyEx
+        // can delete values written by another controller after an emptiness read.
+        // Receipt.Keys includes ancestor snapshots, not deletion authority.
         // Stop/start, not start-before-file-restore: no graph may reload an owned DLL
         // while inverse file changes are being applied. Start runs even on file failure.
         try { if (restartAudio) { Receipt.AudioRestartPending = true; Save(); AudioService.Stop(Receipt.AudioRestartConsent, Receipt.AudioDependents, Receipt.DependentServiceConsent); } else Integration.RequireInstalledModulesUnloaded(); foreach (var file in Receipt.Files.Where(f => f.Applied).Reverse()) {

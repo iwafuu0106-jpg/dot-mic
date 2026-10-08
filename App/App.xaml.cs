@@ -83,9 +83,11 @@ public partial class DotMicApplication : Application
                 tray?.SetState($"DOT MIC · {(model.Status.running != 0 ? "音声処理中" : "停止")} · NC {model.NcText}{(model.Notice.Length > 0 ? " · 要確認" : "")}");
             }
         };
-        if (!startup || !model.Ready) ShowMain(); else { main.AppWindow.Hide(); flyout.AppWindow.Hide(); UpdateVisibility(); }
+        if (!AppVisibilityPolicy.CanHideOnStartup(startup, model.Ready, tray.Registered)) ShowMain(); else { main.AppWindow.Hide(); flyout.AppWindow.Hide(); UpdateVisibility(); }
         await model.InitializeAsync();
-        if (startup && model.Ready) { main.AppWindow.Hide(); flyout.AppWindow.Hide(); UpdateVisibility(); }
+        if (exiting) return; // Exit may have disposed the tray while initialization was awaiting.
+        if (AppVisibilityPolicy.CanHideOnStartup(startup, model.Ready, tray.Registered)) { main.AppWindow.Hide(); flyout.AppWindow.Hide(); UpdateVisibility(); }
+        else if (!tray.Registered) { ShowMain(); model.SetNotice("トレイアイコンを登録できませんでした。メニューから終了できます。"); }
         if (smoke) { await RunSmokeAsync(); return; }
         if (!model.Ready && !exiting)
         {
@@ -226,7 +228,7 @@ public partial class DotMicApplication : Application
     }
     private nint MainMessage(nint hwnd, uint msg, nuint wp, nint lp, nuint id, nuint data)
     {
-        if (msg == taskbarCreated) { tray?.Add(); return 0; }
+        if (msg == taskbarCreated) { tray?.Add(); if (tray?.Registered != true) main!.DispatcherQueue.TryEnqueue(() => { ShowMain(); model?.SetNotice("トレイアイコンを復元できませんでした。メニューから終了できます。"); }); return 0; }
         if (msg == activateMessage) { main!.DispatcherQueue.TryEnqueue(ShowMain); return 0; }
         if (msg == TrayIcon.Callback)
         {

@@ -13,7 +13,7 @@ internal static class PackageSource
         bool hasIdentity = File.Exists(identity);
         if (hasIdentity) {
             var marker = JsonSerializer.Deserialize<PackageIdentity>(File.ReadAllText(identity), Contract.Json);
-            if (marker?.Version != "0.4.1" || marker.BackendContract != Contract.Version) throw new IOException("配布ファイルの版が一致しません。");
+            if (marker?.Version != "0.4.2" || marker.BackendContract != Contract.Version) throw new IOException("配布ファイルの版が一致しません。");
         }
         string nearby = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, ".."));
         string root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DOT MIC", "Packages");
@@ -21,12 +21,18 @@ internal static class PackageSource
         bool newDistribution = nearPayload && JsonSerializer.Deserialize<Payload>(File.ReadAllText(Path.Combine(nearby, "payload.json")), Contract.Json)?.ApplicationEntries != null;
         string installedMarker = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".dot-mic-install.json"));
         string? installedPackage = null;
-        if (File.Exists(installedMarker)) {
-            SecureStorage.Validate(Path.GetDirectoryName(installedMarker)!, true); SecureStorage.Validate(installedMarker, false);
-            try { installedPackage = JsonSerializer.Deserialize<InstalledApplication>(File.ReadAllText(installedMarker), Contract.Json)?.PackageRoot; }
-            catch (JsonException) { } // A damaged app inventory must not disable independent audio recovery.
+        if (!nearPayload && File.Exists(installedMarker)) {
+            try {
+                SecureStorage.Validate(Path.GetDirectoryName(installedMarker)!, true); SecureStorage.Validate(installedMarker, false);
+                installedPackage = JsonSerializer.Deserialize<InstalledApplication>(File.ReadAllText(installedMarker), Contract.Json)?.PackageRoot;
+                if (string.IsNullOrWhiteSpace(installedPackage)) installedPackage = null;
+            } catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException) {
+                // Do not trust a damaged/unprotected inventory. A separately
+                // configured cache still undergoes all protected-path/hash checks.
+            }
         }
-        string? configuredPackage = RawRegistry.Value(Contract.ConfigPath, "ApplicationPackageDir")?.Display;
+        string? configuredPackage = PackageSelection.ReadFallback(nearPayload, installedPackage,
+            () => RawRegistry.Value(Contract.ConfigPath, "ApplicationPackageDir")?.Display);
         if (!hasIdentity && !newDistribution && !nearby.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
             && !File.Exists(installedMarker) && configuredPackage == null) return; // Legacy portable setup remains compatible.
         installable = true;
@@ -54,7 +60,10 @@ internal static class PackageSource
             string target = Transaction.SafePath(DirectoryPath, file.Path);
             if (!paths.Add(target)) throw new IOException("配布ファイルのパスが重複しています。");
             string origin = Transaction.SafePath(entries.Contains(file) ? Path.GetDirectoryName(source)! : source, file.Path);
-            if (!File.Exists(origin) || Contract.FileHash(origin) != file.Hash) continue; // Missing unrelated files still permit helper-only recovery.
+            bool verified;
+            try { verified = File.Exists(origin) && Contract.FileHash(origin) == file.Hash; }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException) { verified = false; }
+            if (!verified) continue; // Missing/unreadable unrelated files still permit helper-only recovery.
             SecureStorage.Directory(Path.GetDirectoryName(target)!);
             using (var input = new FileStream(origin, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var output = new FileStream(target, FileMode.CreateNew, FileAccess.Write, FileShare.None)) { input.CopyTo(output); output.Flush(true); }

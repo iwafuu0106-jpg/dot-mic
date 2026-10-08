@@ -8,6 +8,7 @@ internal static class FileChecks
     [STAThread]
     private static int Main(string[] args)
     {
+        if (args.Length == 2 && args[0] == "--read-snapshot") return ReadSnapshotChecks(args[1]);
         if (args.Length != 1) return 2;
         string output = Path.GetFullPath(args[0]);
         if (!new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator)) return 3;
@@ -139,5 +140,25 @@ internal static class FileChecks
         var values = new[] { "ApplicationDir", "ApplicationReceipt", "ApplicationPackageDir", "OriginReceipt", "LatestReceipt", "StableId", "ApoPath", "ApoHash" }
             .Select(name => new { Name = name, Value = RawRegistry.Value(Contract.ConfigPath, name) }).ToArray();
         return JsonSerializer.SerializeToUtf8Bytes(new { Values = values, ProtectedAudio = RawRegistry.Value(Contract.AudioPath, "DisableProtectedAudioDG") }, Contract.Json);
+    }
+    private static int ReadSnapshotChecks(string path)
+    {
+        // Optional read-only regression check: never creates or edits a live snapshot.
+        var reader = typeof(Transaction).GetMethod("ReadStored", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!;
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var full = Transaction.Read(path); clock.Stop(); long fullMilliseconds = clock.ElapsedMilliseconds;
+        clock.Restart();
+        var ownWrite = (Receipt)reader.Invoke(null, [path, false])!;
+        clock.Stop(); long ownWriteMilliseconds = clock.ElapsedMilliseconds;
+        if (!JsonSerializer.SerializeToUtf8Bytes(full, Contract.Json).SequenceEqual(JsonSerializer.SerializeToUtf8Bytes(ownWrite, Contract.Json)))
+            throw new IOException("Snapshot changed during the read-only test; retry only after Setup finishes.");
+        try { reader.Invoke(null, [Path.Combine(Path.GetTempPath(), "not-a-recovery-snapshot.json"), false]);
+            throw new InvalidOperationException("Own-write verification accepted an out-of-scope path."); }
+        catch (System.Reflection.TargetInvocationException error) when (error.InnerException is IOException) { }
+        Console.WriteLine(JsonSerializer.Serialize(new { Result = "PASS", ApplicationFiles = full.Application?.Files.Count ?? 0,
+            ExternalRecoveryReadMilliseconds = fullMilliseconds, OwnWriteReadBackMilliseconds = ownWriteMilliseconds,
+            SameReceipt = true, ProtectedSnapshotScopeRetained = true, SnapshotWrites = false, AudioOperations = false,
+            Measurement = "One read of each mode; not an installation benchmark" }, Contract.Json));
+        return 0;
     }
 }

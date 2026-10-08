@@ -18,11 +18,32 @@ internal static class InstallPaths
     }
     internal static bool Within(string path, string root) => path.Equals(root, StringComparison.OrdinalIgnoreCase)
         || path.StartsWith(root.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+    internal static bool RequiresShortcutAccess(bool requested, string? priorOwnedHash) => requested || priorOwnedHash != null;
+    internal static List<string> PlanParents(string root, Func<string, bool> exists, Func<string, bool> fileExists)
+    {
+        var missing = new List<string>();
+        for (string? parent = Path.GetDirectoryName(root); parent != null && !exists(parent); parent = Path.GetDirectoryName(parent)) {
+            if (fileExists(parent) || parent == Path.GetPathRoot(parent)) throw new IOException("保存先の親フォルダーを作成できません。");
+            missing.Add(parent);
+        }
+        missing.Reverse(); return missing;
+    }
     internal static bool AllowedFile(string relative) => relative is "DOT MIC.exe" or "セットアップ.exe" or ".dot-mic-install.json" or "内部ファイル/LICENSE" or "内部ファイル/SECURITY.md"
         || relative.StartsWith("内部ファイル/UI/", StringComparison.Ordinal) || relative.StartsWith("内部ファイル/licenses/", StringComparison.Ordinal);
     internal static void ValidateDeployment(ApplicationDeployment deployment)
     {
         if (Normalize(deployment.Root) != deployment.Root) throw new IOException("アプリ保存先の記録が不正です。");
+        var parents = deployment.ParentDirectories ?? throw new IOException("保存先の親フォルダーの記録が不正です。");
+        var seenParents = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < parents.Count; i++) {
+            string parent = parents[i];
+            if (!Path.IsPathFullyQualified(parent) || Path.GetFullPath(parent) != parent || parent == Path.GetPathRoot(parent)
+                || parent.Equals(deployment.Root, StringComparison.OrdinalIgnoreCase) || !Within(deployment.Root, parent) || !seenParents.Add(parent)
+                || i > 0 && !string.Equals(Path.GetDirectoryName(parent), parents[i - 1], StringComparison.OrdinalIgnoreCase))
+                throw new IOException("保存先の親フォルダーの記録が許可範囲外です。");
+        }
+        if (parents.Count > 0 && !string.Equals(parents[^1], Path.GetDirectoryName(deployment.Root), StringComparison.OrdinalIgnoreCase))
+            throw new IOException("保存先の親フォルダーの記録が連続していません。");
         var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var file in deployment.Files) {
             if (!AllowedFile(file.Relative) || Path.IsPathRooted(file.Relative) || file.Relative.Contains(':')

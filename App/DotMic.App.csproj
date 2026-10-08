@@ -17,10 +17,11 @@
     <ApplicationIcon>Assets\DotMic.ico</ApplicationIcon>
     <AssemblyName>DotMic.App</AssemblyName>
     <RootNamespace>DotMic</RootNamespace>
-    <Version>3.2.0</Version>
+    <Version>0.4.2</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../Shared/NativeTextBuffer.cs" Link="NativeTextBuffer.cs" />
     <Content Include="Assets\DotMic.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.3916" />

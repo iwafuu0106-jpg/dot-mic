@@ -197,9 +197,16 @@ internal sealed class Surface : UserControl
         void Add(string text, Func<Task> action) { var button = Ui.Button(text, text); panel.Children.Add(button); Motion.Attach(button, Motion.Register(button, "item", 0)); button.Click += async (_, _) => { menuFlyout!.Hide(); await action(); }; }
         if (compact) Add("メインを開く", () => { owner.ShowMain(); return Task.CompletedTask; });
         bool menuRefresh = false;
-        var startup = new ToggleSwitch { Header = "サインイン時に起動", OnContent = "有効", OffContent = "無効", IsOn = StartupRegistration.Enabled }; panel.Children.Add(startup);
+        var startup = new ToggleSwitch { Header = "サインイン時に起動", OnContent = "有効", OffContent = "無効" }; panel.Children.Add(startup);
         var startupNote = Ui.Label("", 10); startupNote.Visibility = Visibility.Collapsed; panel.Children.Add(startupNote);
-        startup.Toggled += (_, _) => { if (menuRefresh) return; try { StartupRegistration.Set(startup.IsOn); model.Update(s => s.StartOnSignIn = startup.IsOn); model.SetStartupNotice(""); startupNote.Visibility = Visibility.Collapsed; } catch (Exception e) { startupNote.Foreground = Ui.Warning; startupNote.Text = e.Message; startupNote.Visibility = Visibility.Visible; model.SetStartupNotice("サインイン時の起動を設定できません：" + e.Message); menuRefresh = true; startup.IsOn = StartupRegistration.Enabled; menuRefresh = false; } };
+        void ReadStartup() {
+            var state = StartupRegistration.Read();
+            startup.IsOn = state.Enabled;
+            startupNote.Text = state.Error ?? ""; startupNote.Foreground = Ui.Warning;
+            startupNote.Visibility = state.Error == null ? Visibility.Collapsed : Visibility.Visible;
+        }
+        ReadStartup();
+        startup.Toggled += (_, _) => { if (menuRefresh) return; try { StartupRegistration.Set(startup.IsOn); model.Update(s => s.StartOnSignIn = startup.IsOn); model.SetStartupNotice(""); startupNote.Visibility = Visibility.Collapsed; } catch (Exception e) { menuRefresh = true; try { ReadStartup(); } finally { menuRefresh = false; } startupNote.Foreground = Ui.Warning; startupNote.Text = e.Message; startupNote.Visibility = Visibility.Visible; model.SetStartupNotice("サインイン時の起動を設定できません：" + e.Message); } };
         var bypass = new ToggleSwitch { Header = "バイパス（処理を停止）", OnContent = "有効", OffContent = "無効", IsOn = model.Settings.MasterBypass }; panel.Children.Add(bypass);
         AutomationProperties.SetAutomationId(bypass, "MasterBypassToggle");
         bypass.Toggled += (_, _) => { if (!menuRefresh) model.Update(s => s.MasterBypass = bypass.IsOn); };
@@ -215,7 +222,7 @@ internal sealed class Surface : UserControl
         var flyout = new Flyout { Content = menuBody, Placement = FlyoutPlacementMode.BottomEdgeAlignedRight };
         flyout.FlyoutPresenterStyle = new Style(typeof(FlyoutPresenter)) { Setters = { new Setter(Control.BackgroundProperty, Ui.Panel), new Setter(Control.BorderBrushProperty, Ui.Dots), new Setter(Control.CornerRadiusProperty, new CornerRadius(4)), new Setter(FrameworkElement.WidthProperty, 284d), new Setter(FlyoutPresenter.IsDefaultShadowEnabledProperty, false) } };
         flyout.Opening += (_, _) => menuScroll.MaxHeight = Math.Max(120, Math.Min(560, XamlRoot.Size.Height - 96) - 52);
-         flyout.Opened += (_, _) => { menuRefresh = true; startup.IsOn = StartupRegistration.Enabled; bypass.IsOn = model.Settings.MasterBypass; menuRefresh = false; PopupOpen = true; SetMenuShape(true); Motion.Reveal(panel, true, true); SetActive(owner.IsVisible(this)); };
+         flyout.Opened += (_, _) => { menuRefresh = true; try { ReadStartup(); bypass.IsOn = model.Settings.MasterBypass; } finally { menuRefresh = false; } PopupOpen = true; SetMenuShape(true); Motion.Reveal(panel, true, true); SetActive(owner.IsVisible(this)); };
         flyout.Closed += (_, _) => { PopupOpen = false; SetMenuShape(false); DispatcherQueue.TryEnqueue(() => { SetActive(owner.IsVisible(this)); owner.DismissFlyoutIfInactive(); }); };
         menuFlyout = flyout; // Manual toggling only; do not also enable Button's automatic Flyout opening.
     }

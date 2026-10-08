@@ -46,7 +46,7 @@ internal static class AudioService
         if (current.Count != expected.Count || current.Any(c => !expected.Any(e => e.Name.Equals(c.Name, StringComparison.OrdinalIgnoreCase) && e.OriginalState == c.OriginalState))) throw new IOException("確認後に音声サービスの依存元・稼働状態が変わりました。変更内容を再確認してください。");
     }
     internal static void Restart(bool consent, IReadOnlyList<AudioDependent> dependents, bool dependentConsent)
-    { try { Stop(consent, dependents, dependentConsent); } finally { Start(consent, dependents, dependentConsent); } }
+    { DotMic.Common.FailurePreservation.Run(() => Stop(consent, dependents, dependentConsent), () => Start(consent, dependents, dependentConsent)); }
     internal static void Stop(bool consent, IReadOnlyList<AudioDependent> dependents, bool dependentConsent)
     {
         if (dependents.Count > 0 && !dependentConsent) throw new OperationCanceledException("表示された依存サービスの一時停止への同意がありません。");
@@ -65,15 +65,21 @@ internal static class AudioService
     {
         if (!consent) throw new OperationCanceledException("音声再生・通話の一時切断への同意がありません。");
         var manager = OpenSCManager(null, null, 1); if (manager == 0) throw new Win32Exception(Marshal.GetLastWin32Error());
-        try { var service = OpenService(manager, name, paused ? 0x74u : 0x34u); if (service == 0) throw new Win32Exception(Marshal.GetLastWin32Error(), name);
+        try { var service = OpenService(manager, name, 0x34u); if (service == 0) throw new Win32Exception(Marshal.GetLastWin32Error(), name);
             try {
-                void Wait(uint wanted) { var deadline = Environment.TickCount64 + 20000; while (Environment.TickCount64 < deadline) { if (!QueryServiceStatus(service, out var s)) throw new Win32Exception(Marshal.GetLastWin32Error()); if (s.State == wanted) return; Thread.Sleep(100); } throw new IOException("Audio service再初期化が完了しません。PC再起動が必要な場合は利用者が手動で行ってください。"); }
-                if (!QueryServiceStatus(service, out var current)) throw new Win32Exception(Marshal.GetLastWin32Error());
-                if (start && paused && current.State == 7) return;
-                if (start && current.State == 7) { if (!ControlService(service, 3, out _)) throw new Win32Exception(Marshal.GetLastWin32Error(), name); Wait(4); current.State = 4; }
-                if (!start && current.State != 1) { if (current.State != 3 && !ControlService(service, 1, out _)) throw new Win32Exception(Marshal.GetLastWin32Error()); Wait(1); }
-                if (start && current.State != 4) { if (current.State != 2 && !StartService(service, 0, 0)) throw new Win32Exception(Marshal.GetLastWin32Error()); Wait(4); }
-                if (start && paused) { if (!ControlService(service, 2, out _)) throw new Win32Exception(Marshal.GetLastWin32Error(), name); Wait(7); }
+                ServiceTransition.Run(() => {
+                    if (!QueryServiceStatus(service, out var state)) throw new Win32Exception(Marshal.GetLastWin32Error(), name);
+                    return new(state.State, state.Checkpoint, state.Hint, state.Win32Error);
+                }, command => {
+                    bool separate = command is ServiceTransition.Command.Pause or ServiceTransition.Command.Continue;
+                    nint control = separate ? OpenService(manager, name, ServiceTransition.ControlAccess(command)) : service;
+                    if (control == 0) throw new Win32Exception(Marshal.GetLastWin32Error(), name);
+                    try {
+                        bool changed = command == ServiceTransition.Command.Start ? StartService(control, 0, 0)
+                            : ControlService(control, command == ServiceTransition.Command.Stop ? 1u : command == ServiceTransition.Command.Pause ? 2u : 3u, out _);
+                        if (!changed) throw new Win32Exception(Marshal.GetLastWin32Error(), name);
+                    } finally { if (separate) CloseServiceHandle(control); }
+                }, () => Environment.TickCount64, Thread.Sleep, name, start, paused);
             } finally { CloseServiceHandle(service); }
         } finally { CloseServiceHandle(manager); }
     }

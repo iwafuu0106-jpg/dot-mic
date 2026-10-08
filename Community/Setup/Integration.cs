@@ -28,10 +28,7 @@ internal static class Integration
     internal static void HResult(int hr) { if (hr < 0) Marshal.ThrowExceptionForHR(hr); }
     internal static EndpointIdentity[] Endpoints()
     {
-        int hr = dm_community_endpoints(null, 0, out uint required); if (hr != unchecked((int)0x8007007A)) HResult(hr);
-        if (required is 0 or > 1024 * 1024) throw new IOException("Endpoint metadata size is invalid.");
-        var buffer = new StringBuilder(checked((int)required)); HResult(dm_community_endpoints(buffer, required, out _));
-        return JsonSerializer.Deserialize<EndpointIdentity[]>(buffer.ToString(), Contract.Json) ?? [];
+        return JsonSerializer.Deserialize<EndpointIdentity[]>(DotMic.Common.NativeTextBuffer.Read(dm_community_endpoints), Contract.Json) ?? [];
     }
     internal static void Registration(string path, bool apply) => HResult(dm_community_registration(path, apply ? 1u : 0u));
     internal static List<RawValue> RegistrationPlan(string path)
@@ -42,7 +39,13 @@ internal static class Integration
     }
     internal static JsonElement Status(string endpoint) { var text = new StringBuilder(4096); HResult(dm_community_status(endpoint, text, 4096)); return JsonSerializer.Deserialize<JsonElement>(text.ToString()); }
     internal static void Set(string endpoint, uint property, float value) => HResult(dm_community_set(endpoint, property, value, 1));
-    internal static Task VerifyCaptureOnly(EndpointIdentity target) => Task.Run(() => HResult(dm_community_capture(EndpointIdentity.Resolve(target, Endpoints()).EndpointId, 900)));
+    internal static Task<EndpointIdentity> ResolveReady(EndpointIdentity target) => AudioReadiness.WaitEndpoint(
+        () => EndpointIdentity.Resolve(target, Endpoints()), () => Environment.TickCount64, Task.Delay);
+    internal static async Task VerifyCaptureOnly(EndpointIdentity target)
+    {
+        var current = await ResolveReady(target);
+        await Task.Run(() => HResult(dm_community_capture(current.EndpointId, 900)));
+    }
     internal static void RequireInstalledModulesUnloaded()
     {
         RawRegistry.Privilege("SeDebugPrivilege");
@@ -53,18 +56,20 @@ internal static class Integration
     internal static async Task Verify(EndpointIdentity target, string? expectedPath, string? expectedHash)
     {
         if (expectedPath != null) RawRegistry.Privilege("SeDebugPrivilege"); // Setup-only module inspection, never ordinary UI.
-        var resolved = EndpointIdentity.Resolve(target, Endpoints());
-        var capture = Task.Run(() => HResult(dm_community_capture(resolved.EndpointId, 3500)));
-        try {
-            await Task.Delay(550); var before = Status(resolved.EndpointId); await Task.Delay(700); var after = Status(resolved.EndpointId);
-            if (after.GetProperty("Calls").GetUInt64() <= before.GetProperty("Calls").GetUInt64() || after.GetProperty("Frames").GetUInt64() <= before.GetProperty("Frames").GetUInt64() || after.GetProperty("Running").GetInt32() != 1)
-                throw new IOException("APOProcessの進行を確認できません。registry書込みだけでは成功にしません。");
+        await AudioReadiness.VerifyAttempts(async duration => {
+        var resolved = await ResolveReady(target);
+        var capture = Task.Run(() => HResult(dm_community_capture(resolved.EndpointId, checked((uint)duration))));
+        await DotMic.Common.FailurePreservation.Drain(capture, async () => {
+            await AudioReadiness.WaitProgress(() => {
+                var state = Status(resolved.EndpointId);
+                return new(state.GetProperty("Calls").GetUInt64(), state.GetProperty("Frames").GetUInt64(), state.GetProperty("Running").GetInt32(), state.GetProperty("Error").GetUInt64());
+            }, capture, expectedPath != null, () => Environment.TickCount64, Task.Delay);
             if (expectedPath != null) {
                 bool loaded = false;
                 foreach (var process in Process.GetProcessesByName("audiodg")) { using (process) { try { foreach (ProcessModule module in process.Modules) if (string.Equals(module.FileName, expectedPath, StringComparison.OrdinalIgnoreCase) && Contract.FileHash(module.FileName) == expectedHash) loaded = true; } catch (Exception e) when (e is System.ComponentModel.Win32Exception or InvalidOperationException) { } } }
                 if (!loaded) throw new IOException("Communityの固定配置DLLがaudiodgへ実ロードされていません。旧PnP DLLの実行はCommunity成功に含めません。");
-                if (after.GetProperty("Error").GetUInt64() != 0) throw new IOException("production RTQueueが利用できません。NC代替実装には切り替えません。");
             }
-        } finally { await capture; }
+        });
+        });
     }
 }

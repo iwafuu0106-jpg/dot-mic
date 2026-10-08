@@ -24,7 +24,7 @@ internal sealed class SetupForm : Form
     private string? removalJournal;
     private bool cleanupScheduled;
     private string? pendingApplicationRollbackPath;
-    private string? applicationError, removalInformation;
+    private string? applicationError, removalInformation, deviceError, pendingRemovalError;
     private string? pendingRemovalJournal;
     private bool hasPendingApplicationRemoval;
     private bool Restoring => operation.SelectedIndex >= 2;
@@ -33,7 +33,7 @@ internal sealed class SetupForm : Form
     internal SetupForm(string[] args)
     {
         failVerify = args.Contains("--verify-failure-once");
-        Text = PackageSource.Installable ? "DOT MIC セットアップ 0.4.1" : "DOT MIC セットアップ 0.4.0";
+        Text = PackageSource.Installable ? "DOT MIC セットアップ 0.4.2" : "DOT MIC セットアップ 0.4.0";
         Font = new("Yu Gothic UI", 10);
         ClientSize = new(480, 300); MinimumSize = new(440, 320); StartPosition = FormStartPosition.CenterScreen;
         operation.Items.AddRange(["導入", "修復", "削除", "復旧"]);
@@ -61,6 +61,18 @@ internal sealed class SetupForm : Form
         layout.Controls.Add(actions, 0, 6); layout.SetColumnSpan(actions, 2); Controls.Add(layout);
         operation.SelectedIndexChanged += (_, _) => Reset();
         microphones.SelectedIndexChanged += (_, _) => { if (!loading) Reset(); };
+        microphones.DropDown += async (_, _) => {
+            if (busy || !ready || Restoring || !payloadReady || deviceError == null && microphones.Items.Count > 0) return;
+            await Guard(async () => {
+                EndpointIdentity[] devices;
+                try { devices = await SetupWorker.Run(() => Task.FromResult(Integration.Endpoints())); }
+                catch (Exception error) { deviceError = error.Message; throw; }
+                loading = true;
+                try { microphones.Items.Clear(); microphones.Items.AddRange(devices.Cast<object>().ToArray()); deviceError = null; }
+                finally { loading = false; }
+            });
+            Reset(); // A new list invalidates any earlier plan; no settings are written.
+        };
         protection.SelectedIndexChanged += (_, _) => UpdateAction();
         destination.TextChanged += (_, _) => { if (!loading) Reset(); };
         desktopShortcut.CheckedChanged += (_, _) => { if (!loading) Reset(); };
@@ -77,35 +89,34 @@ internal sealed class SetupForm : Form
                 catch (Exception error) { e.Cancel = true; lastError = error.Message; information.Text = "後片付けを開始できません。「詳細」を確認してください。"; UpdateAction(); }
             }
         };
-        Shown += (_, _) => {
+        Shown += async (_, _) => {
             try {
-                loading = true;
-                if (PackageSource.Installable && ApplicationInstaller.ConfiguredRoot is string installedRoot) {
-                    destination.Text = installedRoot;
-                    try { desktopShortcut.Checked = ApplicationInstaller.ReadInstalled(installedRoot)?.ShortcutHash != null; }
-                    catch (Exception error) { applicationError = error.Message; }
-                }
-                var pendingRemovals = ApplicationInstaller.PendingRemovalReceipts();
-                if (pendingRemovals.Count > 0) {
-                    hasPendingApplicationRemoval = true;
+                loading = true; busy = true; UpdateAction();
+                var state = await SetupWorker.Run(() => Task.FromResult(SetupStartup.Inspect(new(
+                    () => Transaction.ValidatePayload(package), ValidateRecoveryHelper,
+                    () => PackageSource.Installable ? ApplicationInstaller.ConfiguredRoot : null,
+                    root => ApplicationInstaller.ReadInstalled(root)?.ShortcutHash != null,
+                    ApplicationInstaller.PendingRemovalReceipts, Integration.Endpoints,
+                    () => new("", RawRegistry.Value(Contract.ConfigPath, "StableId")?.Display ?? "",
+                        RawRegistry.Value(Contract.ConfigPath, "ContainerId")?.Display ?? "", "",
+                        RawRegistry.Value(Contract.ConfigPath, "PhysicalInterface")?.Display ?? "", "")))));
+                applicationError = state.ApplicationError; deviceError = state.DeviceError; pendingRemovalError = state.PendingRemovalError;
+                payloadReady = state.PayloadReady; payloadError = state.PayloadError;
+                recoveryReady = state.RecoveryReady; recoveryError = state.RecoveryError;
+                if (state.ApplicationRoot != null) destination.Text = state.ApplicationRoot;
+                if (state.DesktopShortcut is bool shortcut) desktopShortcut.Checked = shortcut;
+                hasPendingApplicationRemoval = state.MustResolveRemoval;
+                if (hasPendingApplicationRemoval) {
                     operation.SelectedIndex = 3;
-                    if (pendingRemovals.Count == 1) pendingRecoveryPath = pendingRemovals[0];
-                }
-                try { Transaction.ValidatePayload(package); payloadReady = true; }
-                catch (Exception e) { payloadError = e.Message; }
-                if (payloadReady) recoveryReady = true;
-                else {
-                    try { ValidateRecoveryHelper(); recoveryReady = true; }
-                    catch (Exception e) { recoveryError = e.Message; }
+                    if (state.PendingRemovals.Count == 1) pendingRecoveryPath = state.PendingRemovals[0];
                 }
                 if (payloadReady) {
-                    var devices = Integration.Endpoints(); microphones.Items.AddRange(devices.Cast<object>().ToArray());
-                    var configured = RawRegistry.Value(Contract.ConfigPath, "StableId")?.Display;
-                    if (configured != null) microphones.SelectedItem = devices.SingleOrDefault(e => e.StableId == configured);
+                    microphones.Items.AddRange(state.Endpoints.Cast<object>().ToArray());
+                    if (state.SelectedEndpoint != null) microphones.SelectedItem = state.SelectedEndpoint;
                 }
                 ready = true;
             } catch (Exception e) { information.Text = "準備できませんでした。\r\n" + e.Message; }
-            finally { loading = false; if (ready) Reset(); else UpdateAction(); }
+            finally { loading = false; busy = false; if (ready) Reset(); else UpdateAction(); }
         };
     }
 
@@ -120,6 +131,8 @@ internal sealed class SetupForm : Form
         if (applicationError != null && !Restoring) { information.AppendText("\r\nアプリの配置情報を確認できません。「詳細」を確認してください。削除・復旧は選択できます。"); lastError = applicationError; }
         if (!payloadReady && !Restoring) information.Text = "導入用ファイルを確認できません。配布ファイルをすべて展開し直してください。削除・復旧は選択できます。";
         if (!recoveryReady && Restoring) information.Text = "復旧用ファイルを確認できません。正規の配布ファイルをすべて展開し直してください。";
+        if (pendingRemovalError != null) { information.AppendText("\r\n中断した削除の確認に失敗しました。「復旧」で保存した設定を確認してください。"); lastError = pendingRemovalError; }
+        if (deviceError != null && !Restoring && payloadReady) { information.AppendText("\r\nマイク情報を取得できませんでした。マイク欄を開くと再取得できます。「詳細」を確認してください。"); lastError = deviceError; }
         UpdateAction();
     }
 
@@ -175,8 +188,17 @@ internal sealed class SetupForm : Form
         } else {
             if (microphones.SelectedItem is not EndpointIdentity target) throw new InvalidOperationException("マイクを選択してください。");
             string requestedOperation = Operation == SetupOperation.Repair ? "Repair" : "Install";
-            transaction = await Task.Run(() => Transaction.Prepare(target, package, requestedOperation, false));
-            if (PackageSource.Installable) transaction.ConfigureApplication(package, destination.Text, desktopShortcut.Checked);
+            bool installApplication = PackageSource.Installable;
+            string applicationDestination = destination.Text;
+            bool createShortcut = desktopShortcut.Checked;
+            transaction = await SetupWorker.Run(() => Task.FromResult(Transaction.Prepare(target, package, requestedOperation, false)));
+            if (installApplication) {
+                var prepared = transaction;
+                await SetupWorker.Run(() => {
+                    prepared.ConfigureApplication(package, applicationDestination, createShortcut);
+                    return Task.CompletedTask;
+                });
+            }
         }
         var current = EndpointIdentity.Resolve(transaction.Receipt.Target, Integration.Endpoints());
         foreach (var path in transaction.Receipt.Edits.Select(e => e.Path).Distinct(StringComparer.OrdinalIgnoreCase)) {
@@ -187,6 +209,7 @@ internal sealed class SetupForm : Form
         }
         information.Text = SetupPresentation.Summary(transaction.Receipt, Operation, permissions, failVerify, removingApplication != null);
         if (transaction.Receipt.Application != null && !Restoring) information.AppendText("\r\nアプリ保存先：" + transaction.Receipt.Application.Root);
+        if (transaction.Receipt.Application?.ParentDirectories.Count > 0 && !Restoring) information.AppendText("\r\n未作成の親フォルダーも作成します。削除・復旧時に空の親フォルダーが残る場合があります。");
         if (removingApplication != null) information.AppendText("\r\n" + (Operation == SetupOperation.Recover ? "前回中断した削除を完了します。\r\n" : "")
             + "アプリ保存先：" + removingApplication.Root + "\r\nアプリの配置ファイルと作成したショートカットも削除します。変更されたファイルは残します。");
         if (removalInformation != null) information.AppendText("\r\n" + removalInformation);
@@ -224,33 +247,46 @@ internal sealed class SetupForm : Form
     private async Task Execute()
     {
         var tx = transaction ?? throw new InvalidOperationException("変更内容を確認してください。");
-        if (!SetupPresentation.ServicesMatch(tx.Receipt.AudioDependents, AudioService.Dependents(), Restoring && tx.Receipt.AudioRestartPending))
-            throw new IOException("停止するサービスが変わりました。変更内容を確認し直してください。");
-        // Never silently broaden the single consent if permissions changed after preview.
-        var current = EndpointIdentity.Resolve(tx.Receipt.Target, Integration.Endpoints());
-        foreach (var edit in tx.Receipt.Edits) {
-            string path = edit.Path.StartsWith(tx.Receipt.Target.FxPath, StringComparison.OrdinalIgnoreCase) ? current.FxPath + edit.Path[tx.Receipt.Target.FxPath.Length..] : edit.Path;
-            var actual = PermissionFor(path);
-            if (actual != null && !permissions.Any(p => p.Path.Equals(actual.Path, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(p.ValuePath, actual.ValuePath, StringComparison.OrdinalIgnoreCase) && p.Owner == actual.Owner && p.CreateChild == actual.CreateChild))
-                throw new IOException("必要な権限が変わりました。変更内容を確認し直してください。");
-        }
-        tx.AdvancedPermissionApproved = permissions.Count > 0;
-        tx.Receipt.AudioRestartConsent = true;
-        tx.Receipt.DependentServiceConsent = true;
-        tx.Receipt.ProtectedAudioConsent = true;
-        tx.Receipt.ReplacementConsent = true;
-        tx.Save();
-        if (Restoring) {
-            bool keep = protection.Visible && protection.SelectedIndex == 1;
-            string? preparedRemoval = removingApplication == null ? null : Operation == SetupOperation.Recover && pendingRemovalJournal != null
-                ? pendingRemovalJournal : ApplicationInstaller.PrepareRemoval(removingApplication, tx.DirectoryPath);
+        var selectedOperation = Operation;
+        bool restoring = Restoring;
+        bool keep = protection.Visible && protection.SelectedIndex == 1;
+        var applicationToRemove = removingApplication;
+        string? previousRemoval = pendingRemovalJournal;
+        var approvedPermissions = permissions.ToArray();
+        string? preparedRemoval = await SetupWorker.Run(async () => {
+            if (!SetupPresentation.ServicesMatch(tx.Receipt.AudioDependents, AudioService.Dependents(), restoring && tx.Receipt.AudioRestartPending))
+                throw new IOException("停止するサービスが変わりました。変更内容を確認し直してください。");
+            // Never silently broaden the single consent if permissions changed after preview.
+            var current = EndpointIdentity.Resolve(tx.Receipt.Target, Integration.Endpoints());
+            foreach (var edit in tx.Receipt.Edits) {
+                string path = edit.Path.StartsWith(tx.Receipt.Target.FxPath, StringComparison.OrdinalIgnoreCase) ? current.FxPath + edit.Path[tx.Receipt.Target.FxPath.Length..] : edit.Path;
+                var actual = PermissionFor(path);
+                if (actual != null && !approvedPermissions.Any(p => p.Path.Equals(actual.Path, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(p.ValuePath, actual.ValuePath, StringComparison.OrdinalIgnoreCase) && p.Owner == actual.Owner && p.CreateChild == actual.CreateChild))
+                    throw new IOException("必要な権限が変わりました。変更内容を確認し直してください。");
+            }
+            tx.AdvancedPermissionApproved = approvedPermissions.Length > 0;
+            tx.Receipt.AudioRestartConsent = true;
+            tx.Receipt.DependentServiceConsent = true;
+            tx.Receipt.ProtectedAudioConsent = true;
+            tx.Receipt.ReplacementConsent = true;
+            tx.Save();
+            if (restoring) {
+                string? journal = applicationToRemove == null ? null : selectedOperation == SetupOperation.Recover && previousRemoval != null
+                    ? previousRemoval : ApplicationInstaller.PrepareRemoval(applicationToRemove, tx.DirectoryPath);
+                if (journal != null) { tx.Receipt.ApplicationRemovalJournal = journal; tx.Receipt.ApplicationRemovalPending = true; tx.Save(); }
+                await tx.Rollback(true, (key, facts) => SetupWorker.Decide(this, () => MessageBox.Show(this,
+                    "他の操作で設定が変更されています。導入前に戻すと他の設定を失う可能性があります。\r\n" + key + "\r\n" + facts + "\r\nはい：導入前に戻す／いいえ：現在の設定を残す",
+                    "設定の競合", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes), keep,
+                    restoreApplication: selectedOperation != SetupOperation.Remove && journal == null);
+                return journal;
+            }
+            await tx.Apply(failVerify);
+            return null;
+        });
+        hasPendingApplicationRemoval |= tx.Receipt.ApplicationRemovalPending;
+        if (restoring) {
             pendingRemovalJournal = preparedRemoval;
-            if (preparedRemoval != null) { hasPendingApplicationRemoval = true; tx.Receipt.ApplicationRemovalJournal = preparedRemoval; tx.Receipt.ApplicationRemovalPending = true; tx.Save(); }
-            await tx.Rollback(true, (key, facts) => MessageBox.Show(this,
-                "他の操作で設定が変更されています。導入前に戻すと他の設定を失う可能性があります。\r\n" + key + "\r\n" + facts + "\r\nはい：導入前に戻す／いいえ：現在の設定を残す",
-                "設定の競合", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes, keep,
-                restoreApplication: Operation != SetupOperation.Remove && preparedRemoval == null);
             removalJournal = SetupPresentation.CanFinishApplicationRemoval(tx.Receipt) ? preparedRemoval : null;
             if (SetupPresentation.CanFinishApplicationCleanup(tx.Receipt)) pendingApplicationRollbackPath = tx.ReceiptPath;
             information.Text = Operation == SetupOperation.Remove ? "削除しました。" : "復旧しました。";
@@ -259,7 +295,6 @@ internal sealed class SetupForm : Form
             }
             if (pendingApplicationRollbackPath != null) information.AppendText("\r\nこの画面を閉じると、アプリファイルの復元を完了します。");
         } else {
-            await tx.Apply(failVerify);
             information.Text = Operation == SetupOperation.Repair ? "修復しました。" : "導入しました。";
             information.AppendText(tx.Receipt.Application == null ? "\r\n展開先の「DOT MIC.exe」を開いてください。"
                 : "\r\n" + (desktopShortcut.Checked ? "デスクトップの「DOT MIC」を開いてください。" : "保存先の「DOT MIC.exe」を開いてください。") + "\r\n保存先：" + tx.Receipt.Application.Root + "\r\nダウンロードしたZIP・セットアップは削除して構いません。");
@@ -275,6 +310,7 @@ internal sealed class SetupForm : Form
         try { await action(); }
         catch (Exception e) {
             awaitingConsent = false;
+            hasPendingApplicationRemoval |= transaction?.Receipt.ApplicationRemovalPending == true;
             if (transaction != null && SetupPresentation.CanFinishApplicationCleanup(transaction.Receipt)) {
                 pendingApplicationRollbackPath = transaction.ReceiptPath;
                 information.Text = "音声設定を導入前に戻しました。この画面を閉じると、アプリファイルの復元を完了します。";

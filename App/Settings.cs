@@ -60,11 +60,13 @@ internal static class StartupRegistration
     private const string Key = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string Value = "DotMic";
     internal static string Command => $"\"{AppEntryPaths.Application(AppContext.BaseDirectory, Environment.ProcessPath!)}\" --startup";
-    internal static bool Enabled { get { using var key = Registry.CurrentUser.OpenSubKey(Key); return string.Equals(key?.GetValue(Value) as string, Command, StringComparison.Ordinal); } }
+    private static string? ReadValue() { using var key = Registry.CurrentUser.OpenSubKey(Key); return key?.GetValue(Value) as string; }
+    internal static StartupOptions.State Read() => StartupOptions.Read(ReadValue);
     internal static void Set(bool enabled)
     {
-        using var key = Registry.CurrentUser.CreateSubKey(Key);
-        if (enabled) key.SetValue(Value, Command, RegistryValueKind.String); else key.DeleteValue(Value, false);
-        if (Enabled != enabled) throw new IOException("サインイン起動の登録を確認できません。Windowsのスタートアップ設定も確認してください。");
+        StartupOptions.Set(enabled, () => Command, value => {
+            using var key = Registry.CurrentUser.CreateSubKey(Key);
+            if (value != null) key.SetValue(Value, value, RegistryValueKind.String); else key.DeleteValue(Value, false);
+        }, ReadValue);
     }
 }

@@ -5,7 +5,14 @@ namespace DotMic.Setup;
 
 internal static class DesktopShortcut
 {
-    internal static string PathName => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory), "DOT MIC.lnk");
+    internal static string PathName {
+        get {
+            string directory = Environment.GetFolderPath(Environment.SpecialFolder.CommonDesktopDirectory);
+            if (string.IsNullOrWhiteSpace(directory) || !Path.IsPathFullyQualified(directory))
+                throw new IOException("共通デスクトップを確認できません。ショートカット作成のチェックを外すと導入できます。");
+            return Path.Combine(directory, "DOT MIC.lnk");
+        }
+    }
     internal static void Create(string file, string target)
     {
         object link = Activator.CreateInstance(Type.GetTypeFromCLSID(new("00021401-0000-0000-C000-000000000046"))!)!;

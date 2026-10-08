@@ -54,6 +54,11 @@ internal static class SetupPresentation
         text.AppendLine("固定識別子：" + receipt.Target.StableId);
         text.AppendLine("機器識別子：" + receipt.Target.ContainerId);
         text.AppendLine("復旧データ：" + path);
+        if (receipt.Application?.ParentDirectories.Count > 0) text.AppendLine("作成する保存先の親フォルダー：" + string.Join("、", receipt.Application.ParentDirectories));
+        text.AppendLine("処理状態：" + receipt.Status);
+        if (error != null) text.AppendLine("エラーの詳細：" + error);
+        if (receipt.PendingSecurityRestore.Count > 0) text.AppendLine("権限の復旧待ち：" + string.Join("、", receipt.PendingSecurityRestore));
+        foreach (string diagnostic in receipt.Diagnostics) text.AppendLine("診断記録：" + diagnostic);
         text.AppendLine("変更する設定：");
         foreach (var edit in receipt.Edits) {
             text.AppendLine(edit.Path + " / " + edit.Name);
@@ -66,7 +71,6 @@ internal static class SetupPresentation
             text.AppendLine("デスクトップのショートカット：" + (app.DesktopShortcut ? "作成" : "作成しない"));
             foreach (var file in app.Files) text.AppendLine(file.Relative + "／導入前：" + (file.BeforeHash ?? "未存在") + "／配置後：" + file.Hash);
         }
-        if (error != null) text.AppendLine("エラーの詳細：" + error);
         return text.ToString();
     }
 }

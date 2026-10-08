@@ -9,8 +9,12 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>DotMic.Setup</AssemblyName>
-    <Version>0.4.0</Version>
+    <Version>0.4.2</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
-  <ItemGroup><EmbeddedResource Include="ApoPayload.lock.json" /></ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="ApoPayload.lock.json" />
+    <Compile Include="../../Shared/NativeTextBuffer.cs" Link="NativeTextBuffer.cs" />
+    <Compile Include="../../Shared/FailurePreservation.cs" Link="FailurePreservation.cs" />
+  </ItemGroup>
 </Project>
