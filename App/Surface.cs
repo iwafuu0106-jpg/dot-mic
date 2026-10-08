@@ -119,12 +119,14 @@ internal sealed class Surface : UserControl
     {
         refresh = true; gate.IsOn = model.Settings.Gate; nc.IsOn = model.Settings.Nc; refresh = false;
         deviceName.Text = model.InputName;
-        connection.Text = !model.Ready ? "未接続" : model.Settings.MasterBypass ? "バイパス" : model.Status.running != 0 ? "接続中" : "入力待機";
+        connection.Text = model.ConnectionText;
         connection.Foreground = model.Notice.Length > 0 ? Ui.Warning : Ui.Secondary;
         var content = (StackPanel)threshold.Content; ((TextBlock)content.Children[0]).Text = $"{model.Settings.Threshold:0} dB";
         AutomationProperties.SetName(threshold, $"ゲート開閾値 {model.Settings.Threshold:0} dB。詳細を開く");
-        gateState.Text = !model.Settings.Gate ? "無効" : model.Status.running == 0 ? "停止" : model.Status.gateOpen != 0 ? "通過" : "遮断";
-        ncState.Text = model.Status.running == 0 ? model.Settings.Nc ? "有効・入力待ち" : "無効" : model.NcText;
+        bool waiting = model.ObservationState == DotMic.Common.InputObservationState.Idle;
+        bool transparent = model.ObservationState == DotMic.Common.InputObservationState.Passthrough;
+        gateState.Text = !model.Settings.Gate ? "無効" : model.Status.running == 0 ? transparent ? "未適用" : waiting ? "入力待ち" : "未確認" : model.Status.gateOpen != 0 ? "通過" : "遮断";
+        ncState.Text = !model.Settings.Nc && model.Status.running == 0 ? "無効" : model.Status.running == 0 ? transparent ? "未適用" : waiting ? "有効・入力待ち" : "未確認" : model.NcText;
         ncState.Foreground = model.Status.ncState == 5 ? Ui.Warning : Ui.Secondary;
         gateState.Visibility = model.Settings.Gate ? Visibility.Visible : Visibility.Collapsed;
         ncState.Visibility = model.Settings.Nc || model.Status.ncState != 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -202,11 +204,12 @@ internal sealed class Surface : UserControl
         void ReadStartup() {
             var state = StartupRegistration.Read();
             startup.IsOn = state.Enabled;
-            startupNote.Text = state.Error ?? ""; startupNote.Foreground = Ui.Warning;
+            startupNote.Text = state.Error == null ? "" : "起動設定を確認できません。「診断」を確認してください。"; startupNote.Foreground = Ui.Warning;
             startupNote.Visibility = state.Error == null ? Visibility.Collapsed : Visibility.Visible;
+            if (state.Error != null) model.SetStartupError(new IOException(state.Error));
         }
         ReadStartup();
-        startup.Toggled += (_, _) => { if (menuRefresh) return; try { StartupRegistration.Set(startup.IsOn); model.Update(s => s.StartOnSignIn = startup.IsOn); model.SetStartupNotice(""); startupNote.Visibility = Visibility.Collapsed; } catch (Exception e) { menuRefresh = true; try { ReadStartup(); } finally { menuRefresh = false; } startupNote.Foreground = Ui.Warning; startupNote.Text = e.Message; startupNote.Visibility = Visibility.Visible; model.SetStartupNotice("サインイン時の起動を設定できません：" + e.Message); } };
+        startup.Toggled += (_, _) => { if (menuRefresh) return; try { StartupRegistration.Set(startup.IsOn); model.Update(s => s.StartOnSignIn = startup.IsOn); model.SetStartupNotice(""); startupNote.Visibility = Visibility.Collapsed; } catch (Exception e) { menuRefresh = true; try { ReadStartup(); } finally { menuRefresh = false; } startupNote.Foreground = Ui.Warning; startupNote.Text = "起動設定を変更できません。「診断」を確認してください。"; startupNote.Visibility = Visibility.Visible; model.SetStartupError(e); } };
         var bypass = new ToggleSwitch { Header = "バイパス（処理を停止）", OnContent = "有効", OffContent = "無効", IsOn = model.Settings.MasterBypass }; panel.Children.Add(bypass);
         AutomationProperties.SetAutomationId(bypass, "MasterBypassToggle");
         bypass.Toggled += (_, _) => { if (!menuRefresh) model.Update(s => s.MasterBypass = bypass.IsOn); };
@@ -292,7 +295,7 @@ internal sealed class Surface : UserControl
     private async Task DiagnosticsAsync()
     {
         var body = new StackPanel { Spacing = 10 }; var text = new TextBlock { IsTextSelectionEnabled = true, TextWrapping = TextWrapping.Wrap, FontSize = 12, Foreground = Ui.Primary }; body.Children.Add(text);
-        string Snapshot() { var s = model.Status; return $"DOT MIC\n{model.Notice}\n入力: {model.InputName}\nバイパス: {(model.Settings.MasterBypass ? "有効" : "無効")}\nノイズ除去: {model.NcText}\n推論回数: {s.runs} / 採用区間: {s.wetBlocks} / 原音区間: {s.fallbackBlocks}\n異常回数: {s.faults}\n固定遅延: 83 ms"; }
+        string Snapshot() { var s = model.Status; return $"DOT MIC\n{model.Notice}\n入力: {model.InputName}\nバイパス: {(model.Settings.MasterBypass ? "有効" : "無効")}\nノイズ除去: {model.NcText}\n推論回数: {s.runs} / 採用区間: {s.wetBlocks} / 原音区間: {s.fallbackBlocks}\n異常回数: {s.faults}\n{DotMic.Common.InputObservationText.LatencyContract}\n{model.DiagnosticDetails}"; }
         var copy = Ui.Button("数値と状態をコピー", "診断をクリップボードにコピー"); body.Children.Add(copy); copy.Click += (_, _) => { var data = new DataPackage(); data.SetText(Snapshot()); Clipboard.SetContent(data); };
         System.ComponentModel.PropertyChangedEventHandler handler = (_, _) => text.Text = Snapshot(); model.PropertyChanged += handler; text.Text = Snapshot();
         try { await ShowAsync(Dialog("診断（実測状態）", body), body); } finally { model.PropertyChanged -= handler; }

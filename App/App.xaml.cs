@@ -16,6 +16,9 @@ public partial class DotMicApplication : Application
     private nint mainHwnd, flyHwnd;
     private uint taskbarCreated;
     private readonly uint activateMessage = Win32.RegisterWindowMessage("DotMic.Activate.3.2.09BAF257");
+    private readonly uint updateExitMessage = Win32.RegisterWindowMessage(DotMic.Common.UpdateExitProtocol.MessageName);
+    private readonly ulong updateExitToken = CreationTime();
+    private static ulong CreationTime() { using var process = System.Diagnostics.Process.GetCurrentProcess(); return unchecked((ulong)process.StartTime.ToFileTimeUtc()); }
     private bool exiting, locked;
     private bool mainHiding, flyHiding;
     private int mainHideGeneration, flyHideGeneration;
@@ -230,6 +233,7 @@ public partial class DotMicApplication : Application
     {
         if (msg == taskbarCreated) { tray?.Add(); if (tray?.Registered != true) main!.DispatcherQueue.TryEnqueue(() => { ShowMain(); model?.SetNotice("トレイアイコンを復元できませんでした。メニューから終了できます。"); }); return 0; }
         if (msg == activateMessage) { main!.DispatcherQueue.TryEnqueue(ShowMain); return 0; }
+        if (updateExitMessage != 0 && msg == updateExitMessage) { if (DotMic.Common.UpdateExitProtocol.Accepts(updateExitToken, (ulong)wp)) main!.DispatcherQueue.TryEnqueue(async () => { try { await ExitAsync(); } catch (Exception error) { LogFailure(error); } }); return 0; }
         if (msg == TrayIcon.Callback)
         {
             uint notification = (uint)((long)lp & 0xffff);

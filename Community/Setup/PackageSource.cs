@@ -6,14 +6,17 @@ internal static class PackageSource
 {
     internal static string DirectoryPath { get; private set; } = AppContext.BaseDirectory;
     private static bool installable;
+    private static bool resolverInstalled;
+    private static bool initialized;
     internal static bool Installable => installable || File.Exists(Path.Combine(AppContext.BaseDirectory, "installation-package.json"));
     internal static void Initialize()
     {
+        if (initialized) return;
         string identity = Path.Combine(AppContext.BaseDirectory, "installation-package.json");
         bool hasIdentity = File.Exists(identity);
         if (hasIdentity) {
             var marker = JsonSerializer.Deserialize<PackageIdentity>(File.ReadAllText(identity), Contract.Json);
-            if (marker?.Version != "0.4.2" || marker.BackendContract != Contract.Version) throw new IOException("配布ファイルの版が一致しません。");
+            if (marker?.Version is not ("0.4.2" or "0.5.0-rc.1") || marker.BackendContract != Contract.Version) throw new IOException("配布ファイルの版が一致しません。");
         }
         string nearby = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, ".."));
         string root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "DOT MIC", "Packages");
@@ -34,7 +37,7 @@ internal static class PackageSource
         string? configuredPackage = PackageSelection.ReadFallback(nearPayload, installedPackage,
             () => RawRegistry.Value(Contract.ConfigPath, "ApplicationPackageDir")?.Display);
         if (!hasIdentity && !newDistribution && !nearby.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
-            && !File.Exists(installedMarker) && configuredPackage == null) return; // Legacy portable setup remains compatible.
+            && !File.Exists(installedMarker) && configuredPackage == null) { initialized = true; return; } // Legacy portable setup remains compatible.
         installable = true;
         DirectoryPath = nearPayload ? nearby
             : installedPackage ?? configuredPackage ?? throw new IOException("修復用の配布ファイルを確認できません。新しいセットアップをダウンロードしてください。");
@@ -42,8 +45,12 @@ internal static class PackageSource
         if (!DirectoryPath.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) StageDistribution(DirectoryPath, root);
         SecureStorage.Validate(root, true); SecureStorage.Validate(DirectoryPath, true);
         ValidateFiles("DotMic.Integration.dll"); // Unrelated UI assets must not prevent independent receipt recovery.
-        System.Runtime.InteropServices.NativeLibrary.SetDllImportResolver(typeof(Integration).Assembly, (name, assembly, search) =>
-            name == "DotMic.Integration.dll" ? System.Runtime.InteropServices.NativeLibrary.Load(Transaction.SafePath(DirectoryPath, name)) : 0);
+        if (!resolverInstalled) {
+            System.Runtime.InteropServices.NativeLibrary.SetDllImportResolver(typeof(Integration).Assembly, (name, assembly, search) =>
+                name == "DotMic.Integration.dll" ? System.Runtime.InteropServices.NativeLibrary.Load(Transaction.SafePath(DirectoryPath, name)) : 0);
+            resolverInstalled = true;
+        }
+        initialized = true;
     }
     private static void StageDistribution(string source, string cacheRoot)
     {

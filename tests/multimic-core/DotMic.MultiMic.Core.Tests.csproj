@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Community/Setup/Models.cs" Link="Core/Models.cs" />
+    <Compile Include="../../Community/Setup/FleetModels.cs" Link="Core/FleetModels.cs" />
+    <Compile Include="../../Community/Setup/FleetStore.cs" Link="Core/FleetStore.cs" />
+    <Compile Include="../../Community/Setup/FleetCoordinator.cs" Link="Core/FleetCoordinator.cs" />
+    <Compile Include="../../Community/Setup/FleetReplica.cs" Link="Core/FleetReplica.cs" />
+    <Compile Include="../../Community/Setup/SharedDeployment.cs" Link="Core/SharedDeployment.cs" />
+    <Compile Include="../../Community/Setup/SharedCleanup.cs" Link="Core/SharedCleanup.cs" />
+    <Compile Include="../../Community/Setup/ProfilePropagation.cs" Link="Core/ProfilePropagation.cs" />
+    <Compile Include="../../Community/Setup/CommonProfile.cs" Link="Core/CommonProfile.cs" />
+    <Compile Include="../../Community/Setup/FixedRegistryData.cs" Link="Core/FixedRegistryData.cs" />
+    <Compile Include="../../Community/Setup/LegacyProfileValue.cs" Link="Core/LegacyProfileValue.cs" />
+    <Compile Include="../../Community/Setup/EndpointTransaction.cs" Link="Core/EndpointTransaction.cs" />
+    <Compile Include="../../Community/Setup/Transaction.cs" Link="Core/Transaction.cs" />
+    <Compile Include="../../Community/Setup/PayloadPolicy.cs" Link="Core/PayloadPolicy.cs" />
+    <EmbeddedResource Include="../../Community/Setup/ApoPayload.lock.json" LogicalName="DotMic.Setup.ApoPayload.lock.json" />
+    <EmbeddedResource Include="../../Community/Setup/ApoCandidate.lock.json" LogicalName="DotMic.Setup.ApoCandidate.lock.json" Condition="Exists('../../Community/Setup/ApoCandidate.lock.json')" />
+    <Compile Include="../../Community/Setup/Integration.cs" Link="Core/Integration.cs" />
+    <Compile Include="../../Community/Setup/RawRegistry.cs" Link="Core/RawRegistry.cs" />
+    <Compile Include="../../Community/Setup/SecureStorage.cs" Link="Core/SecureStorage.cs" />
+    <Compile Include="../../Community/Setup/ApplicationInstaller.cs" Link="Core/ApplicationInstaller.cs" />
+    <Compile Include="../../Community/Setup/InstallPaths.cs" Link="Core/InstallPaths.cs" />
+    <Compile Include="../../Community/Setup/DesktopShortcut.cs" Link="Core/DesktopShortcut.cs" />
+    <Compile Include="../../Community/Setup/PackageSource.cs" Link="Core/PackageSource.cs" />
+    <Compile Include="../../Community/Setup/PackageSelection.cs" Link="Core/PackageSelection.cs" />
+    <Compile Include="../../Community/Setup/SecurityDescriptorPolicy.cs" Link="Core/SecurityDescriptorPolicy.cs" />
+    <Compile Include="../../Community/Setup/StagedFileReplacement.cs" Link="Core/StagedFileReplacement.cs" />
+    <Compile Include="../../Community/Setup/SetupDefaults.cs" Link="Core/SetupDefaults.cs" />
+    <Compile Include="../../Community/Setup/AudioReadiness.cs" Link="Core/AudioReadiness.cs" />
+    <Compile Include="../../Community/Setup/AudioService.cs" Link="Core/AudioService.cs" />
+    <Compile Include="../../Community/Setup/ServiceTransition.cs" Link="Core/ServiceTransition.cs" />
+    <Compile Include="../../Shared/NativeTextBuffer.cs" Link="Core/NativeTextBuffer.cs" />
+    <Compile Include="../../Shared/FailurePreservation.cs" Link="Core/FailurePreservation.cs" />
+    <Compile Include="../../Shared/CaptureEligibility.cs" Link="Core/CaptureEligibility.cs" />
+  </ItemGroup>
+</Project>

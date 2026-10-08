@@ -6,6 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../Shared/ApplicationExitPolicy.cs" Link="ApplicationExitPolicy.cs" />
+    <Compile Include="../../Shared/InputObservation.cs" Link="InputObservation.cs" />
+    <Compile Include="../../App/ApoSettings.cs" Link="ApoSettings.cs" />
     <Compile Include="../../Shared/NativeTextBuffer.cs" Link="NativeTextBuffer.cs" />
     <Compile Include="../../Shared/FailurePreservation.cs" Link="FailurePreservation.cs" />
     <Compile Include="../../Community/Setup/ServiceTransition.cs" Link="ServiceTransition.cs" />

@@ -9,12 +9,16 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>DotMic.Setup</AssemblyName>
-    <Version>0.4.2</Version>
+    <Version>0.5.0-rc.1</Version>
+    <ApoCandidateLockFile Condition="'$(ApoCandidateLockFile)' == ''">ApoCandidate.lock.json</ApoCandidateLockFile>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="ApoPayload.lock.json" />
+    <EmbeddedResource Include="$(ApoCandidateLockFile)" LogicalName="DotMic.Setup.ApoCandidate.lock.json" Condition="Exists('$(ApoCandidateLockFile)')" />
     <Compile Include="../../Shared/NativeTextBuffer.cs" Link="NativeTextBuffer.cs" />
     <Compile Include="../../Shared/FailurePreservation.cs" Link="FailurePreservation.cs" />
+    <Compile Include="../../Shared/CaptureEligibility.cs" Link="CaptureEligibility.cs" />
+    <Compile Include="../../Shared/ApplicationExitPolicy.cs" Link="ApplicationExitPolicy.cs" />
   </ItemGroup>
 </Project>

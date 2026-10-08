@@ -58,7 +58,7 @@ internal sealed class SetupStartup
         while (true) {
             try { return read(); }
             catch (Exception error) when (error.HResult == unchecked((int)0x80070015)) {
-                if (clock() - began >= 5000) throw new IOException("マイク一覧の準備が完了しません。マイク欄を開くと再取得できます。", error);
+                if (clock() - began >= 5000) throw new IOException("マイク情報の準備が完了しません。接続を確認して再試行してください。", error);
                 sleep(200);
             }
         }

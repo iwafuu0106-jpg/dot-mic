@@ -1,5 +1,7 @@
 # Community integrationの変更と同意
 
+0.5.0-rc.1候補では、セットアップの一括同意で管理者権限の常駐処理を導入し、新しく接続したマイクにも適用します。通常のアプリは管理者権限を必要としません。表示した同意範囲を超える効果置換・権限変更・中断を無断で追加せず、確認が必要なマイクは保留します。対象台数と影響は通常画面、固定識別子・正確な変更値・例外・復旧データは「詳細」に表示します。
+
 ## Protected AudioDG
 
 Community方式では`HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Audio\DisableProtectedAudioDG=1`を使用します。DOT MICだけに限らず、Windows全体のProtected Audio / secure audio pathへ影響し、一部DRMコンテンツやサービスが動作しなくなる可能性があります。Secure Boot、Memory Integrity、TESTSIGNINGやWindowsのコード整合性設定は変更しません。
@@ -12,9 +14,11 @@ Uninstallでは導入前の状態を表示します。DOT MICが未存在また�
 
 同じMFX位置にメーカー効果やEqualizer APOがある場合、DOT MICで置換するとその効果が停止する可能性があります。複雑なchainingやvendor内部解析は行いません。型とraw dataを保存し、説明への同意後に置換します。
 
-特殊ACLそのものを理由に拒否しません。通常管理者権限で書込み可能か確認し、不足時だけAdvanced Compatibilityで対象key・現owner・必要権限・復元を説明します。許可後に対象keyだけ一時permissionを変更し、書込み直後に元owner/ACLへ戻します。MMDevices全体へFull Controlを付与しません。完全なsnapshot／read-back／rollbackが成立しない変更は実行しません。
+特殊ACLそのものを理由に拒否しません。通常管理者権限で書込み可能か確認し、不足時だけ必要な一時権限の追加と復元を説明して、未選択のcheckboxで同意を求めます。対象key・現owner・必要権限は「詳細」で確認できます。許可後に対象keyだけ一時permissionを変更し、書込み直後に元owner/ACLへ戻します。MMDevices全体へFull Controlを付与しません。完全なsnapshot／read-back／rollbackが成立しない変更は実行しません。
 
 ## ロードと配布
+
+更新・修復の同意後、配置情報・hash・正確な実行pathを確認した同一セッションのDOT MICだけを終了します。設定保存を伴う通常終了を12秒待ち、旧版や無応答時は保持したprocess handleで強制終了します。未保存の変更が失われる可能性を確認画面に表示します。確認後にアプリが起動した場合は説明を確認し直します。別ユーザー、識別不明、ファイル／配置変更は中止し、終了確認できない状態で上書きしません。音声hostやほかのアプリは終了しません。常駐処理、観測、削除／復旧にはこの更新時の終了権限を使いません。
 
 audiodgのAPO/model/runtimeは固定Program Filesに配置し、一般ユーザーには読取り／実行だけを許可します。Recovery snapshotは管理者管理のProgramDataへatomic保存し、checksumで破損を検出します。checksumはAuthenticodeや外部署名の代替ではありません。
 

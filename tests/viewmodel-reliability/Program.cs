@@ -9,9 +9,11 @@ model.SetGain(1);
 ApoSettings.FailWrite = true;
 for (int i = 0; i < 4; i++) await Flush(model, true);
 Check(queue.Timers[2].Starts == 4, "actual coordinator schedules only three retries after the initial save");
+Check(!model.Notice.Contains("fake transient write failure") && model.DiagnosticDetails.Contains("fake transient write failure"), "write exception stays in diagnostics, not normal notice");
 ApoSettings.FailRead = true;
 await model.RefreshAsync();
 Check(!model.Ready && model.Settings.Gain == 1, "disconnection retains unapplied edits");
+Check(!model.Notice.Contains("fake disconnected microphone") && model.DiagnosticDetails.Contains("fake disconnected microphone"), "read exception stays in diagnostics, not normal notice");
 ApoSettings.FailRead = false;
 ApoSettings.BlockRead = 1;
 model.SetVisibility(true); // Starts a recovery poll before the explicit refresh.
@@ -32,7 +34,14 @@ Check(model.Notice.Contains("設定を反映できません") && edits.HasChange
 ApoSettings.FailWrite = false;
 await model.RefreshAsync();
 Check(!edits.HasChanges && !model.Notice.Contains("設定を反映できません"), "successful explicit retry clears its write notice");
+foreach (var (state, text) in new[] { (0u, "入力待機"), (2u, "動作未確認"), (3u, "診断未取得"), (4u, "原音：形式非対応"), (1u, "接続中") }) {
+    ApoSettings.CurrentObservation = new(2, state, 1, state == 3 ? 0u : 1u, state == 3 ? 1u : 0u, state == 3 ? unchecked((int)0x80070005) : 0, 2, 5, 2400);
+    await model.RefreshAsync();
+    Check(model.Ready && model.ConnectionText == text, "diagnostic failure never disables common controls or fabricates idle: " + text);
+}
+model.SetGain(3);
 await model.ExitAsync();
+Check(ApoSettings.CommittedGain == 3 && !edits.HasChanges, "normal update exit flushes final edits");
 var writesAtExit = ApoSettings.Commits;
 await model.RefreshAsync();
 Check(ApoSettings.Commits == writesAtExit && model.Exiting, "late refresh does not write after exit");

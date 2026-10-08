@@ -24,7 +24,7 @@ internal static class StartupRegistration { internal static void Set(bool enable
 internal static class CommunityIntegration
 {
     internal enum HealthKind { Healthy, MissingIntegration, RepairRequired, NeedsSelection, Unknown }
-    internal sealed record HealthResult(HealthKind Kind, string Message);
+    internal sealed record HealthResult(HealthKind Kind, string Message, string Details = "");
     internal static bool Enabled => true;
     internal static TaskCompletionSource HealthCalled = new(TaskCreationOptions.RunContinuationsAsynchronously);
     internal static HealthResult Health() { HealthCalled.TrySetResult(); return new(HealthKind.Healthy, ""); }
@@ -34,17 +34,19 @@ internal static class ApoSettings
 {
     internal sealed record Values(float gain, float threshold, float hysteresis, float attack, float hold, float release, uint bypass, uint gate, uint nc);
     internal sealed record Metrics(float input, float output, float limiter, uint running, uint nc, uint gate, ulong runs, ulong adopted, ulong fallback, ulong faults);
+    internal sealed record Observation(uint version, uint state, uint targets, uint observed, uint missing, int result, uint reason, ulong calls, ulong frames);
+    internal static Observation CurrentObservation = new(2, 1, 1, 1, 0, 0, 0, 1, 480);
     internal static bool FailRead, FailWrite;
     internal static int BlockRead;
     internal static int Commits;
     internal static float CommittedGain;
     internal static TaskCompletionSource ReadEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
     internal static TaskCompletionSource ReleaseRead = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    internal static (Values values, Metrics status, string name) Read(bool request)
+    internal static (Values values, Metrics status, Observation observation, string name) Read(bool request)
     {
         if (Interlocked.Exchange(ref BlockRead, 0) == 1) { ReadEntered.TrySetResult(); ReleaseRead.Task.GetAwaiter().GetResult(); }
         if (FailRead) throw new IOException("fake disconnected microphone");
-        return (new(CommittedGain, -48, 6, 5, 160, 120, 0, 0, 0), new(0, 0, 1, 1, 0, 0, 1, 0, 0, 0), "fake microphone");
+        return (new(CommittedGain, -48, 6, 5, 160, 120, 0, 0, 0), new(0, 0, 1, CurrentObservation.state == 1 ? 1u : 0u, 0, 0, 1, 0, 0, 0), CurrentObservation, "fake microphone");
     }
     internal static void Set(uint property, float value, bool commit)
     {

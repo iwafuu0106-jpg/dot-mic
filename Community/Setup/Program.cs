@@ -8,6 +8,25 @@ internal static class Program
     private static int Main(string[] args)
     {
         if (args.Length == 2 && args[0] == "--fixtures") { ConsentPolicy.Fixtures(Path.GetFullPath(args[1])); return 0; }
+        if (args.Length == 3 && args[0] == "--inspect-package") {
+            try {
+                var payload = Transaction.ValidatePayload(Path.GetFullPath(args[1]));
+                File.WriteAllText(Path.GetFullPath(args[2]), System.Text.Json.JsonSerializer.Serialize(new {
+                    Result = "PASS_PINNED_PAYLOAD", payload.Version, payload.ApoHash, Files = payload.Files.Count,
+                    RegistryWrites = false, ServicesChanged = false, MicrophoneCapture = false
+                }, Contract.Json)); return 0;
+            } catch (Exception error) { File.WriteAllText(Path.GetFullPath(args[2]), error.ToString()); return 1; }
+        }
+        if (args.Length == 3 && args[0] == "--observe-devices" && int.TryParse(args[1], out int seconds))
+            return ManagerObservation.Run(seconds, args[2]);
+        if (args.Length == 1 && args[0] == "--manager-service")
+            return ResidentHost.Run((stop, ready) => {
+                if (!Environment.Is64BitProcess || WindowsIdentity.GetCurrent().User?.Value != "S-1-5-18")
+                    throw new UnauthorizedAccessException("自動設定はWindowsの管理サービスから起動してください。");
+                PackageSource.Initialize();
+                if (!PayloadPolicy.IsCandidate(Transaction.ValidatePayload(PackageSource.DirectoryPath))) throw new IOException("自動適用の配布ファイルが候補版と一致しません。");
+                ResidentLoop.Run(stop, FleetSetup.Reconcile, FleetSetup.LogManagerFailure, ready, watchParameters: true);
+            }, FleetSetup.LogManagerFailure);
         ApplicationConfiguration.Initialize();
         if (!Environment.Is64BitProcess || !new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator)) { MessageBox.Show("導入・修復・削除・復旧には64ビットの管理者権限が必要です。通常のアプリは管理者権限なしで起動してください。", "DOT MIC セットアップ"); return 1; }
         bool cleanup = args.Length == 3 && args[0] is "--cleanup-application" or "--cleanup-rollback";
@@ -16,14 +35,11 @@ internal static class Program
             try { using var process = System.Diagnostics.Process.GetProcessById(parent); if (!process.WaitForExit(60000)) return 1; }
             catch (ArgumentException) { }
         }
-        FileStream operation;
+        IDisposable operation;
         try {
-            Transaction.ProtectDirectory(Contract.RecoveryRoot);
-            string path = Path.Combine(Contract.RecoveryRoot, "setup-operation.lock");
-            if (File.Exists(path)) SecureStorage.RecoveryFile(path);
-            operation = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None); SecureStorage.File(path);
-        } catch (Exception e) { MessageBox.Show("処理を開始できません。別のセットアップが開いている場合は閉じてください。\n" + e.Message, "DOT MIC セットアップ"); return 1; }
-        using var operationLifetime = operation; // No service, IPC server or background resident component.
+            operation = OperationLock.TryAcquire() ?? throw new IOException("別のセットアップが実行中です。");
+        } catch { MessageBox.Show("処理を開始できません。しばらく待ってから、セットアップを開き直してください。", "DOT MIC セットアップ"); return 1; }
+        using var operationLifetime = operation;
         if (cleanup) {
             Transaction? cleanupTransaction = null;
             try {
@@ -46,6 +62,7 @@ internal static class Program
                 MessageBox.Show("アプリの後片付けを完了できませんでした。復旧データは保持しています。\n" + e.Message, "DOT MIC セットアップ"); return 1;
             }
         }
+        if (args.Length == 0 || args[0] is "--repair" or "--remove") { Application.Run(new SetupForm(args)); return 0; }
         try { PackageSource.Initialize(); }
         catch (Exception e) { MessageBox.Show("配布ファイルを確認・準備できませんでした。\n" + e.Message, "DOT MIC セットアップ"); return 1; }
         if (args.Length == 3 && args[0] == "--reference-detach-archived-pnp" && args[1] == "--explicit-reference-and-dependent-consent") {

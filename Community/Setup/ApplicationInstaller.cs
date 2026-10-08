@@ -58,7 +58,7 @@ internal static class ApplicationInstaller
     }
     internal static ApplicationDeployment Prepare(Transaction tx, string package, string destination, bool desktop)
     {
-        string root = InstallPaths.Normalize(destination); CheckParents(root); RequireApplicationClosed(root);
+        string root = InstallPaths.Normalize(destination); CheckParents(root);
         if (ConfiguredRoot is string configured && !configured.Equals(root, StringComparison.OrdinalIgnoreCase))
             throw new IOException("保存先を変更する場合は、既存の導入を削除してから新しい保存先へ導入してください。");
         var previous = ReadInstalled(root);
@@ -119,10 +119,40 @@ internal static class ApplicationInstaller
         }
         deployment.Files.Add(new() { Relative = relative, Hash = hash, Existed = existed, BeforeHash = before });
     }
+    internal static void ValidateBeforeUpdate(Transaction tx, string package)
+    {
+        if (tx.Receipt.Application is not { } app) return;
+        Validate(app); CheckParents(app.Root);
+        if (Directory.Exists(app.Root)) SecureStorage.Validate(app.Root, true);
+        foreach (var file in app.Files) {
+            string destination = Transaction.SafePath(app.Root, file.Relative);
+            SecureStorage.NoRedirection(destination);
+            if (Directory.Exists(destination)) throw new IOException("配置先に同名のフォルダーがあります。変更内容を確認し直してください。");
+            for (string? parent = Path.GetDirectoryName(destination); parent != null && InstallPaths.Within(parent, app.Root); parent = Path.GetDirectoryName(parent))
+                if (Directory.Exists(parent)) SecureStorage.Validate(parent, true);
+            if (File.Exists(destination)) SecureStorage.Validate(destination, false);
+            if (File.Exists(destination) != file.Existed || (file.Existed && Contract.FileHash(destination) != file.BeforeHash))
+                throw new IOException("確認後に保存先のファイルが変わりました。変更内容を確認し直してください。");
+            if (file.BeforeHash == file.Hash) continue;
+            string source = file.Relative == Marker ? Path.Combine(tx.DirectoryPath, "application-marker.new.json")
+                : Transaction.SafePath(package, file.Relative.StartsWith("内部ファイル/", StringComparison.Ordinal) ? file.Relative["内部ファイル/".Length..] : file.Relative);
+            if (Contract.FileHash(source) != file.Hash) throw new IOException("確認後に配置用ファイルが変わりました。");
+            RequireFreshStage(destination + ".stage-" + tx.Receipt.TransactionId);
+        }
+        if (app.DesktopShortcut || app.ShortcutBeforeHash != null) {
+            SecureStorage.NoRedirection(DesktopShortcut.PathName);
+            if (Directory.Exists(DesktopShortcut.PathName)) throw new IOException("ショートカットの配置先に同名のフォルダーがあります。");
+            string? hash = File.Exists(DesktopShortcut.PathName) ? Contract.FileHash(DesktopShortcut.PathName) : null;
+            if (hash != app.ShortcutBeforeHash) throw new IOException("確認後にデスクトップのショートカットが変わりました。");
+            if (app.DesktopShortcut && Contract.FileHash(Path.Combine(tx.DirectoryPath, "desktop-shortcut.new.lnk")) != app.ShortcutHash)
+                throw new IOException("確認後にショートカットの配置用ファイルが変わりました。");
+            if (app.DesktopShortcut) RequireFreshStage(DesktopShortcut.PathName + ".stage-" + tx.Receipt.TransactionId);
+        }
+    }
     internal static void Apply(Transaction tx, string package)
     {
         if (tx.Receipt.Application is not { } app) return;
-        Validate(app); RequireApplicationClosed(app.Root); CheckParents(app.Root);
+        Validate(app); RequireApplicationClosed(app.Root); ValidateBeforeUpdate(tx, package); CheckParents(app.Root);
         foreach (string parent in app.ParentDirectories) {
             CheckParents(parent);
             if (Directory.Exists(parent)) SecureStorage.ValidateParent(parent);
@@ -146,7 +176,7 @@ internal static class ApplicationInstaller
             if (Contract.FileHash(source) != file.Hash) throw new IOException("確認後に配置用ファイルが変わりました。");
             CreateDirectory(Path.GetDirectoryName(destination)!, app.Root);
             string staged = destination + ".stage-" + tx.Receipt.TransactionId;
-            if (File.Exists(staged)) throw new IOException("配置用ファイルが残っています。復旧を完了してから再試行してください。");
+            RequireFreshStage(staged);
             file.StageStarted = true; tx.Save();
             try { File.Copy(source, staged, false); SecureStorage.File(staged); }
             finally { if (File.Exists(staged)) { file.StageHash = Contract.FileHash(staged); tx.Save(); } }

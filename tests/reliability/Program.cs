@@ -3,6 +3,24 @@ using DotMic;
 using DotMic.Common;
 
 static void Check(bool condition, string name) { if (!condition) throw new InvalidOperationException(name); }
+var exitOrder = new List<string>();
+Check(System.Runtime.InteropServices.Marshal.SizeOf<ApoObservation>() == 48 && System.Runtime.InteropServices.Marshal.OffsetOf<ApoObservation>("calls").ToInt32() == 32, "managed observation ABI matches native layout");
+ApplicationExitPolicy.RequireConsent(false, false); ApplicationExitPolicy.RequireConsent(true, true);
+try { ApplicationExitPolicy.RequireConsent(true, false); throw new Exception("undisclosed forced exit accepted"); } catch (IOException) { }
+Check(InputObservationText.Connection(InputObservationState.Passthrough, 1) == "原音：RAW"
+    && InputObservationText.Connection(InputObservationState.Passthrough, 3) == "原音：モード未確認"
+    && InputObservationText.Notice(InputObservationState.Processing, 1).Contains("取得できない")
+    && InputObservationText.LatencyContract.Contains("原音通過: 0 ms"), "partial diagnostic failures and unsupported latency remain explicit");
+Check(!ApplicationExitPolicy.Run(() => exitOrder.Add("request"), timeout => { Check(timeout == 12000, "grace exceeds final-save deadline"); exitOrder.Add("exited"); return true; }, () => throw new Exception("graceful exit must not terminate")), "graceful exit");
+Check(exitOrder.SequenceEqual(["request", "exited"]), "request precedes exit confirmation");
+exitOrder.Clear(); int waits = 0;
+Check(ApplicationExitPolicy.Run(() => exitOrder.Add("request"), timeout => { exitOrder.Add("wait:" + timeout); return ++waits == 2; }, () => exitOrder.Add("terminate")), "hung/old application forced within consent");
+Check(exitOrder.SequenceEqual(["request", "wait:12000", "terminate", "wait:5000"]), "bounded graceful-force-confirm order");
+try { ApplicationExitPolicy.Run(() => { }, _ => false, () => { }); throw new Exception("unconfirmed exit accepted"); } catch (IOException) { }
+Check(UpdateExitProtocol.Accepts(100, 100) && !UpdateExitProtocol.Accepts(100, 101) && !UpdateExitProtocol.Accepts(0, 0), "PID reuse cannot authorize a shutdown message to a replacement instance");
+Check(ApplicationExitPolicy.IsOwnedImage("C:/owned/UI/DotMic.App.exe", "c:/owned/UI/DotMic.App.exe")
+    && !ApplicationExitPolicy.IsOwnedImage("C:/owned/UI/DotMic.App.exe", "C:/owned-sibling/UI/DotMic.App.exe")
+    && !ApplicationExitPolicy.IsOwnedImage("C:/owned/UI/DotMic.App.exe", "C:/owned/UI/DOT MIC.exe"), "only the exact owned executable may be terminated");
 int calls = 0;
 string text = NativeTextBuffer.Read((StringBuilder? buffer, uint capacity, out uint required) => {
     calls++; required = calls == 1 ? 3u : 9u;

@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../Shared/InputObservation.cs" Link="InputObservation.cs" />
     <Compile Include="../../App/AudioViewModel.cs" Link="AudioViewModel.cs" />
     <Compile Include="../../App/PendingAudioWrites.cs" Link="PendingAudioWrites.cs" />
     <Compile Include="../../App/AudioStatus.cs" Link="AudioStatus.cs" />

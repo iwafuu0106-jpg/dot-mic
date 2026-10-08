@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Community/Setup/ResidentLoop.cs" Link="ResidentLoop.cs" />
+    <Compile Include="../../Community/Setup/ActivationObservation.cs" Link="ActivationObservation.cs" />
+    <Compile Include="../../Shared/NativeTextBuffer.cs" Link="NativeTextBuffer.cs" />
+    <Compile Include="../../Shared/CaptureEligibility.cs" Link="CaptureEligibility.cs" />
+    <Compile Include="../../Community/Setup/FixedRegistryData.cs" Link="FixedRegistryData.cs" />
+    <Compile Include="../../Community/Setup/LegacyProfileValue.cs" Link="LegacyProfileValue.cs" />
+  </ItemGroup>
+</Project>

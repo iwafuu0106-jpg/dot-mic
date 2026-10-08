@@ -17,11 +17,14 @@
     <ApplicationIcon>Assets\DotMic.ico</ApplicationIcon>
     <AssemblyName>DotMic.App</AssemblyName>
     <RootNamespace>DotMic</RootNamespace>
-    <Version>0.4.2</Version>
+    <Version>0.5.0-rc.1</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../Shared/NativeTextBuffer.cs" Link="NativeTextBuffer.cs" />
+    <Compile Include="../Shared/CaptureEligibility.cs" Link="CaptureEligibility.cs" />
+    <Compile Include="../Shared/ApplicationExitPolicy.cs" Link="ApplicationExitPolicy.cs" />
+    <Compile Include="../Shared/InputObservation.cs" Link="InputObservation.cs" />
     <Content Include="Assets\DotMic.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.3916" />

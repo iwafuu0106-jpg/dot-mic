@@ -20,7 +20,8 @@ internal static class Contract
     internal static string FileHash(string path) { using var stream = File.OpenRead(path); return Convert.ToHexString(SHA256.HashData(stream)); }
 }
 
-internal sealed record EndpointIdentity(string EndpointId, string StableId, string ContainerId, string FriendlyName, string PhysicalInterface, string FxPath)
+internal sealed record EndpointIdentity(string EndpointId, string StableId, string ContainerId, string FriendlyName, string PhysicalInterface, string FxPath,
+    int FormFactor = -1, string PnpId = "", string JackSubType = "", uint State = 1, bool? SharedModeBusy = null)
 {
     public override string ToString() => FriendlyName + " · " + ContainerId;
     internal static EndpointIdentity Resolve(EndpointIdentity prior, IEnumerable<EndpointIdentity> endpoints)
@@ -84,6 +85,11 @@ internal sealed class Receipt
     public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
     public string Operation { get; set; } = "Install";
     public string Status { get; set; } = "Prepared";
+    public string Scope { get; set; } = "Legacy";
+    public string? PredecessorReceipt { get; set; }
+    public List<string> SharedSourceReceipts { get; set; } = [];
+    public bool SharedKeepProtectedAudio { get; set; }
+    public bool CompensationVerified { get; set; }
     public EndpointIdentity Target { get; set; } = null!;
     public List<KeyImage> Keys { get; set; } = [];
     public List<Edit> Edits { get; set; } = [];
@@ -105,6 +111,7 @@ internal sealed class Receipt
     public List<AudioDependent> AudioDependents { get; set; } = [];
     public bool DependentServiceConsent { get; set; }
     public bool AudioRestartPending { get; set; }
+    public uint AudioRootBeforeStop { get; set; }
     public string? ArchivedOriginReceipt { get; set; }
     public ApplicationDeployment? Application { get; set; }
     public string? ApplicationRemovalJournal { get; set; }
